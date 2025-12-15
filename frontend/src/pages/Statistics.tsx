@@ -1,6 +1,6 @@
-import React, {useEffect, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
-import {Activity, BarChart3, FileText, MessageSquare, TrendingUp} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Activity, BarChart3, FileText, MessageSquare, TrendingUp } from 'lucide-react';
 import api from '../services/api';
 
 interface Stats {
@@ -27,11 +27,11 @@ export default function Statistics() {
     const fetchStatistics = async () => {
         try {
             const userId = localStorage.getItem('userId');
-            const url = userId ? `/statistics?userId=${userId}` : '/statistics';
+            const url = userId ? `/ statistics ? userId = ${userId} ` : '/statistics';
             const response = await api.get(url);
             setStats(response.data);
             setError(null);
-        } catch (err) {
+        } catch {
             setError('Failed to load statistics');
         } finally {
             setLoading(false);
@@ -137,17 +137,17 @@ export default function Statistics() {
                                         return (
                                             <div
                                                 key={index}
-                                                className={`${stat.bgColor} border ${stat.borderColor} rounded-xl p-6 transition-all hover:scale-105 hover:shadow-xl`}
+                                                className={`${stat.bgColor} border ${stat.borderColor} rounded - xl p - 6 transition - all hover: scale - 105 hover: shadow - xl`}
                                             >
                                                 <div className="flex items-center justify-between mb-4">
-                                                    <div className={`p-3 bg-gray-800/50 rounded-lg`}>
-                                                        <Icon className={`w-6 h-6 ${stat.iconColor}`} />
+                                                    <div className={`p - 3 bg - gray - 800 / 50 rounded - lg`}>
+                                                        <Icon className={`w - 6 h - 6 ${stat.iconColor} `} />
                                                     </div>
                                                     <div className="text-right">
                                                         <p className="text-gray-400 text-sm font-medium">
                                                             {stat.title}
                                                         </p>
-                                                        <p className={`text-3xl font-bold ${stat.iconColor} mt-1`}>
+                                                        <p className={`text - 3xl font - bold ${stat.iconColor} mt - 1`}>
                                                             {stat.value.toLocaleString()}
                                                         </p>
                                                     </div>

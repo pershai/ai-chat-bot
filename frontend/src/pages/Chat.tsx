@@ -18,6 +18,55 @@ interface Conversation {
     title?: string;
 }
 
+const CodeBlock = ({ inline, className, children, ...props }: any) => {
+    const match = /language-(\w+)/.exec(className || '');
+    const codeContent = String(children).replace(/\n$/, '');
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(codeContent);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return !inline && match ? (
+        <div className="relative group mb-4 mt-2">
+            <div className="absolute right-2 top-2 z-10">
+                <button
+                    onClick={handleCopy}
+                    className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs text-gray-300 transition-colors opacity-0 group-hover:opacity-100"
+                    title="Copy code"
+                >
+                    {copied ? (
+                        <>
+                            <Check className="w-3 h-3" />
+                            <span>Copied!</span>
+                        </>
+                    ) : (
+                        <>
+                            <Copy className="w-3 h-3" />
+                            <span>Copy</span>
+                        </>
+                    )}
+                </button>
+            </div>
+            <SyntaxHighlighter
+                style={vscDarkPlus}
+                language={match[1]}
+                PreTag="div"
+                className="rounded-lg !bg-gray-900 !mt-0"
+                {...props}
+            >
+                {codeContent}
+            </SyntaxHighlighter>
+        </div>
+    ) : (
+        <code className="bg-gray-700 px-1.5 py-0.5 rounded text-sm font-mono text-green-400" {...props}>
+            {children}
+        </code>
+    );
+};
+
 export default function Chat() {
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -36,6 +85,7 @@ export default function Chat() {
         scrollToBottom();
     }, [messages]);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         fetchConversations();
     }, []);
@@ -325,89 +375,42 @@ export default function Chat() {
                                         <ReactMarkdown
                                             components={{
                                                 // Enhanced code blocks with syntax highlighting and copy button
-                                                code: ({ node, inline, className, children, ...props }: any) => {
-                                                    const match = /language-(\w+)/.exec(className || '');
-                                                    const codeContent = String(children).replace(/\n$/, '');
-                                                    const [copied, setCopied] = useState(false);
-
-                                                    const handleCopy = () => {
-                                                        navigator.clipboard.writeText(codeContent);
-                                                        setCopied(true);
-                                                        setTimeout(() => setCopied(false), 2000);
-                                                    };
-
-                                                    return !inline && match ? (
-                                                        <div className="relative group mb-4 mt-2">
-                                                            <div className="absolute right-2 top-2 z-10">
-                                                                <button
-                                                                    onClick={handleCopy}
-                                                                    className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs text-gray-300 transition-colors opacity-0 group-hover:opacity-100"
-                                                                    title="Copy code"
-                                                                >
-                                                                    {copied ? (
-                                                                        <>
-                                                                            <Check className="w-3 h-3" />
-                                                                            <span>Copied!</span>
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <Copy className="w-3 h-3" />
-                                                                            <span>Copy</span>
-                                                                        </>
-                                                                    )}
-                                                                </button>
-                                                            </div>
-                                                            <SyntaxHighlighter
-                                                                style={vscDarkPlus}
-                                                                language={match[1]}
-                                                                PreTag="div"
-                                                                className="rounded-lg !bg-gray-900 !mt-0"
-                                                                {...props}
-                                                            >
-                                                                {codeContent}
-                                                            </SyntaxHighlighter>
-                                                        </div>
-                                                    ) : (
-                                                        <code className="bg-gray-700 px-1.5 py-0.5 rounded text-sm font-mono text-green-400" {...props}>
-                                                            {children}
-                                                        </code>
-                                                    );
-                                                },
+                                                code: CodeBlock,
                                                 // Styled headings
-                                                h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-3 mt-4 text-white border-b border-gray-700 pb-2" {...props} />,
-                                                h2: ({ node, ...props }) => <h2 className="text-xl font-bold mb-2 mt-3 text-white" {...props} />,
-                                                h3: ({ node, ...props }) => <h3 className="text-lg font-bold mb-2 mt-2 text-gray-200" {...props} />,
+                                                h1: ({ ...props }) => <h1 className="text-2xl font-bold mb-3 mt-4 text-white border-b border-gray-700 pb-2" {...props} />,
+                                                h2: ({ ...props }) => <h2 className="text-xl font-bold mb-2 mt-3 text-white" {...props} />,
+                                                h3: ({ ...props }) => <h3 className="text-lg font-bold mb-2 mt-2 text-gray-200" {...props} />,
                                                 // Styled lists
-                                                ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-3 space-y-1 ml-2" {...props} />,
-                                                ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-3 space-y-1 ml-2" {...props} />,
-                                                li: ({ node, ...props }) => <li className="ml-4 text-gray-200" {...props} />,
+                                                ul: ({ ...props }) => <ul className="list-disc list-inside mb-3 space-y-1 ml-2" {...props} />,
+                                                ol: ({ ...props }) => <ol className="list-decimal list-inside mb-3 space-y-1 ml-2" {...props} />,
+                                                li: ({ ...props }) => <li className="ml-4 text-gray-200" {...props} />,
                                                 // Styled paragraphs
-                                                p: ({ node, ...props }) => <p className="mb-3 text-gray-200 leading-relaxed" {...props} />,
+                                                p: ({ ...props }) => <p className="mb-3 text-gray-200 leading-relaxed" {...props} />,
                                                 // Styled bold text
-                                                strong: ({ node, ...props }) => <strong className="font-bold text-white" {...props} />,
+                                                strong: ({ ...props }) => <strong className="font-bold text-white" {...props} />,
                                                 // Styled links
-                                                a: ({ node, ...props }) => <a className="text-blue-400 hover:text-blue-300 underline hover:no-underline transition-colors" target="_blank" rel="noopener noreferrer" {...props} />,
+                                                a: ({ ...props }) => <a className="text-blue-400 hover:text-blue-300 underline hover:no-underline transition-colors" target="_blank" rel="noopener noreferrer" {...props} />,
                                                 // Styled blockquotes
-                                                blockquote: ({ node, ...props }) => (
+                                                blockquote: ({ ...props }) => (
                                                     <blockquote className="border-l-4 border-blue-500 pl-4 py-2 my-3 bg-gray-800/50 italic text-gray-300" {...props} />
                                                 ),
                                                 // Styled tables
-                                                table: ({ node, ...props }) => (
+                                                table: ({ ...props }) => (
                                                     <div className="overflow-x-auto my-4">
                                                         <table className="min-w-full border-collapse border border-gray-700" {...props} />
                                                     </div>
                                                 ),
-                                                thead: ({ node, ...props }) => <thead className="bg-gray-800" {...props} />,
-                                                tbody: ({ node, ...props }) => <tbody {...props} />,
-                                                tr: ({ node, ...props }) => <tr className="border-b border-gray-700 hover:bg-gray-800/30" {...props} />,
-                                                th: ({ node, ...props }) => <th className="px-4 py-2 text-left font-bold text-white border border-gray-700" {...props} />,
-                                                td: ({ node, ...props }) => <td className="px-4 py-2 text-gray-200 border border-gray-700" {...props} />,
+                                                thead: ({ ...props }) => <thead className="bg-gray-800" {...props} />,
+                                                tbody: ({ ...props }) => <tbody {...props} />,
+                                                tr: ({ ...props }) => <tr className="border-b border-gray-700 hover:bg-gray-800/30" {...props} />,
+                                                th: ({ ...props }) => <th className="px-4 py-2 text-left font-bold text-white border border-gray-700" {...props} />,
+                                                td: ({ ...props }) => <td className="px-4 py-2 text-gray-200 border border-gray-700" {...props} />,
                                                 // Styled images
-                                                img: ({ node, ...props }) => (
+                                                img: ({ ...props }) => (
                                                     <img className="max-w-full h-auto rounded-lg my-3 border border-gray-700" {...props} />
                                                 ),
                                                 // Horizontal rules
-                                                hr: ({ node, ...props }) => <hr className="my-4 border-gray-700" {...props} />,
+                                                hr: ({ ...props }) => <hr className="my-4 border-gray-700" {...props} />,
                                             }}
                                         >
                                             {msg.content}

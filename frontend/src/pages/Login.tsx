@@ -1,6 +1,6 @@
-import React, {useState} from 'react';
-import {useNavigate} from 'react-router-dom';
-import {ArrowRight, Lock, MessageSquare, User} from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowRight, Lock, MessageSquare, User } from 'lucide-react';
 import api from '../services/api';
 
 export default function Login() {
@@ -44,9 +44,9 @@ export default function Login() {
             }
 
             navigate('/chat');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Auth error:', err);
-            setError(err.response?.data?.message || 'Authentication failed');
+            setError((err as any).response?.data?.message || 'Authentication failed');
         } finally {
             setLoading(false);
         }

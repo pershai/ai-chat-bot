@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 
 const api = axios.create({
     baseURL: '/api/v1',
@@ -8,9 +9,9 @@ const api = axios.create({
 });
 
 let isRefreshing = false;
-let failedQueue: { resolve: (value?: any) => void; reject: (reason?: any) => void; config: any }[] = [];
+let failedQueue: { resolve: (value?: unknown) => void; reject: (reason?: unknown) => void; config: AxiosRequestConfig }[] = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: unknown | null, token: string | null = null) => {
     failedQueue.forEach(prom => {
         if (error) {
             prom.reject(error);
@@ -48,16 +49,16 @@ api.interceptors.response.use(
 
             if (isRefreshing) {
                 // If a refresh is already in progress, queue the original request
-                return new Promise(function(resolve, reject) {
+                return new Promise(function (resolve, reject) {
                     failedQueue.push({ resolve, reject, config: originalRequest });
                 })
-                .then(token => {
-                    originalRequest.headers.Authorization = 'Bearer ' + token;
-                    return axios(originalRequest);
-                })
-                .catch(err => {
-                    return Promise.reject(err);
-                });
+                    .then(token => {
+                        originalRequest.headers.Authorization = 'Bearer ' + token;
+                        return axios(originalRequest);
+                    })
+                    .catch(err => {
+                        return Promise.reject(err);
+                    });
             }
 
             isRefreshing = true;

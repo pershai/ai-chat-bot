@@ -1,7 +1,7 @@
-import React, {useCallback, useEffect, useState} from 'react';
-import {useDropzone} from 'react-dropzone';
-import {AlertCircle, Calendar, CheckCircle, File as FileIcon, FileText, Loader, Upload, X} from 'lucide-react';
-import {useNavigate} from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { AlertCircle, Calendar, CheckCircle, File as FileIcon, FileText, Loader, Upload, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 interface UploadedFile {
@@ -26,7 +26,7 @@ interface Document {
 export default function Documents() {
     const [files, setFiles] = useState<UploadedFile[]>([]);
     const [uploading, setUploading] = useState(false);
-    const [jobId, setJobId] = useState<string | null>(null);
+    const [, setJobId] = useState<string | null>(null);
     const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
@@ -103,7 +103,7 @@ export default function Documents() {
             // Poll job status
             const pollInterval = setInterval(async () => {
                 try {
-                    const statusResponse = await api.get(`/documents/status/${newJobId}`);
+                    const statusResponse = await api.get(`/ documents / status / ${newJobId} `);
                     setJobStatus(statusResponse.data);
 
                     if (statusResponse.data.status === 'COMPLETED') {
@@ -118,15 +118,15 @@ export default function Documents() {
                         setError('Upload failed. Please try again.');
                         setUploading(false);
                     }
-                } catch (err) {
+                } catch {
                     clearInterval(pollInterval);
                     setError('Failed to check upload status.');
                     setUploading(false);
                 }
             }, 2000);
 
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Upload failed. Please try again.');
+        } catch (err: unknown) {
+            setError((err as any).response?.data?.message || 'Upload failed. Please try again.');
             setUploading(false);
         }
     };
@@ -176,10 +176,10 @@ export default function Documents() {
                             {/* Dropzone */}
                             <div
                                 {...getRootProps()}
-                                className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all ${isDragActive
-                                    ? 'border-blue-500 bg-blue-900/20'
-                                    : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'
-                                    }`}
+                                className={`border - 2 border - dashed rounded - xl p - 12 text - center cursor - pointer transition - all ${isDragActive
+                                        ? 'border-blue-500 bg-blue-900/20'
+                                        : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'
+                                    } `}
                             >
                                 <input {...getInputProps()} />
                                 <Upload className="w-16 h-16 mx-auto mb-4 text-gray-400" />
@@ -261,7 +261,7 @@ export default function Documents() {
                                         <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
                                             <div
                                                 className="bg-blue-600 h-full transition-all duration-500 rounded-full"
-                                                style={{ width: `${progress}%` }}
+                                                style={{ width: `${progress}% ` }}
                                             />
                                         </div>
                                         <p className="text-center text-lg font-medium text-blue-400">{progress}%</p>
