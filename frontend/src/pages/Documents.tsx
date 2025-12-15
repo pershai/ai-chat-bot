@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { AlertCircle, Calendar, CheckCircle, File as FileIcon, FileText, Loader, Upload, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import api from '../services/api';
 
 interface UploadedFile {
@@ -126,7 +127,11 @@ export default function Documents() {
             }, 2000);
 
         } catch (err: unknown) {
-            setError((err as any).response?.data?.message || 'Upload failed. Please try again.');
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || 'Upload failed. Please try again.');
+            } else {
+                setError('Upload failed. Please try again.');
+            }
             setUploading(false);
         }
     };
@@ -177,8 +182,8 @@ export default function Documents() {
                             <div
                                 {...getRootProps()}
                                 className={`border - 2 border - dashed rounded - xl p - 12 text - center cursor - pointer transition - all ${isDragActive
-                                        ? 'border-blue-500 bg-blue-900/20'
-                                        : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'
+                                    ? 'border-blue-500 bg-blue-900/20'
+                                    : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'
                                     } `}
                             >
                                 <input {...getInputProps()} />

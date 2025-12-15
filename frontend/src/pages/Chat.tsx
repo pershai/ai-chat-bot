@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BarChart3, Bot, Check, Copy, FileText, LogOut, Menu, MessageSquare, Plus, Send, Trash2, User, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import axios from 'axios';
 import api from '../services/api';
 import { twMerge } from 'tailwind-merge';
 
@@ -18,7 +19,13 @@ interface Conversation {
     title?: string;
 }
 
-const CodeBlock = ({ inline, className, children, ...props }: any) => {
+interface CodeBlockProps {
+    inline?: boolean;
+    className?: string;
+    children?: React.ReactNode;
+}
+
+const CodeBlock = ({ inline, className, children, ...props }: CodeBlockProps) => {
     const match = /language-(\w+)/.exec(className || '');
     const codeContent = String(children).replace(/\n$/, '');
     const [copied, setCopied] = useState(false);
@@ -77,44 +84,16 @@ export default function Chat() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => {
-        fetchConversations();
-    }, []);
-
-    useEffect(() => {
-        if (activeConversationId) {
-            fetchMessages(activeConversationId);
-        } else {
-            setMessages([]);
-        }
-    }, [activeConversationId]);
-
-    const getUserId = () => {
-        // Get userId from localStorage (stored during login)
-        const storedUserId = localStorage.getItem('userId');
-        return storedUserId;
-    };
-
-    const fetchConversations = async () => {
+    const fetchConversations = useCallback(async () => {
         try {
-            const userId = getUserId();
+            const userId = localStorage.getItem('userId');
             if (!userId) {
                 console.warn('No userId found, skipping conversation fetch');
-                setConversations([]); // Ensure it's always an array
+                setConversations([]);
                 return;
             }
             const response = await api.get(`/conversations?userId=${userId}`);
 
-            // Ensure response.data is an array
             if (Array.isArray(response.data)) {
                 setConversations(response.data);
             } else {
@@ -124,13 +103,34 @@ export default function Chat() {
 
             if (response.data.length > 0 && !activeConversationId) {
                 // Optionally select first one
-                // setActiveConversationId(response.data[0].id);
             }
         } catch (error) {
             console.error('Failed to fetch conversations', error);
-            setConversations([]); // Set to empty array on error
+            setConversations([]);
         }
+    }, [activeConversationId]);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    useEffect(() => {
+        fetchConversations();
+    }, [fetchConversations]);
+
+    useEffect(() => {
+        if (activeConversationId) {
+            fetchMessages(activeConversationId);
+        } else {
+            setMessages([]);
+        }
+    }, [activeConversationId]);
+
+
 
     const fetchMessages = async (id: string) => {
         try {
@@ -209,16 +209,18 @@ export default function Chat() {
                 fetchConversations(); // Refresh conversation list
             }
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error sending message', error);
 
             let errorMessage = 'Sorry, something went wrong.';
 
-            if (error.response?.status === 429) {
-                const retryAfter = error.response.data?.retryAfter || 'a few moments';
-                errorMessage = `⚠️ API Quota Exceeded\n\nYou've reached the API rate limit.\n\nPlease retry in: ${retryAfter}\n\nTo increase limits, visit:\nhttps://ai.google.dev/gemini-api/docs/rate-limits`;
-            } else if (error.response?.data?.detail) {
-                errorMessage = error.response.data.detail;
+            if (axios.isAxiosError(error)) {
+                if (error.response?.status === 429) {
+                    const retryAfter = error.response.data?.retryAfter || 'a few moments';
+                    errorMessage = `⚠️ API Quota Exceeded\n\nYou've reached the API rate limit.\n\nPlease retry in: ${retryAfter}\n\nTo increase limits, visit:\nhttps://ai.google.dev/gemini-api/docs/rate-limits`;
+                } else if (error.response?.data?.detail) {
+                    errorMessage = error.response.data.detail;
+                }
             }
 
             setMessages(prev => [...prev, {

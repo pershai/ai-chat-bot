@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Lock, MessageSquare, User } from 'lucide-react';
+import axios from 'axios';
 import api from '../services/api';
 
 export default function Login() {
@@ -46,7 +47,11 @@ export default function Login() {
             navigate('/chat');
         } catch (err: unknown) {
             console.error('Auth error:', err);
-            setError((err as any).response?.data?.message || 'Authentication failed');
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || 'Authentication failed');
+            } else {
+                setError('Authentication failed');
+            }
         } finally {
             setLoading(false);
         }

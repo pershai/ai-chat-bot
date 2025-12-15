@@ -1,4 +1,4 @@
-import React, {createContext, type ReactNode, useCallback, useContext, useEffect, useState} from 'react';
+import React, { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import api from '../services/api';
 
 interface AuthContextType {
@@ -12,27 +12,11 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-    const [userId, setUserId] = useState<string | null>(null);
-    const [username, setUsername] = useState<string | null>(null);
-
-    useEffect(() => {
-        const token = localStorage.getItem('jwtToken');
-        const storedUserId = localStorage.getItem('userId');
-        const storedUsername = localStorage.getItem('username');
-
-        if (token && storedUserId && storedUsername) {
-            setIsAuthenticated(true);
-            setUserId(storedUserId);
-            setUsername(storedUsername);
-        } else {
-            // Clear any partial data if one is missing
-            localStorage.removeItem('jwtToken');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('userId');
-            localStorage.removeItem('username');
-        }
-    }, []);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+        return !!(localStorage.getItem('jwtToken') && localStorage.getItem('userId') && localStorage.getItem('username'));
+    });
+    const [userId, setUserId] = useState<string | null>(() => localStorage.getItem('userId'));
+    const [username, setUsername] = useState<string | null>(() => localStorage.getItem('username'));
 
     const login = useCallback((token: string, refreshToken: string, id: string, user: string) => {
         localStorage.setItem('jwtToken', token);
