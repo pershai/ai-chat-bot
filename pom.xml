@@ -27,7 +27,7 @@
         <openapi.version>3.0.0</openapi.version>
         <jjwt.version>0.13.0</jjwt.version>
         <testcontainers.version>1.19.7</testcontainers.version>
-        <commons-compress.version>1.27.1</commons-compress.version>
+        <commons-compress.version>1.28.0</commons-compress.version>
     </properties>
     <dependencies>
         <!-- Spring Boot -->
