@@ -23,7 +23,7 @@
         <langchain4j-tika.version>1.9.1-beta17</langchain4j-tika.version>
         <langchain4j-spring-boot-starter.version>1.9.1-beta17</langchain4j-spring-boot-starter.version>
         <langgraph4j.version>1.7.5</langgraph4j.version>
-        <lombok.version>1.18.30</lombok.version>
+        <lombok.version>1.18.42</lombok.version>
         <openapi.version>3.0.0</openapi.version>
         <jjwt.version>0.13.0</jjwt.version>
         <testcontainers.version>1.19.7</testcontainers.version>
