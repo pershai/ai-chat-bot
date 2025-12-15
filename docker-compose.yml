@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: chatbot_app
+    ports:
+      - "8080:8080"
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6334
+      - POSTGRES_HOST=postgres
+      - BIG_DATA_REDIS=${REDIS_HOST:redis}
+      - REDIS_HOST=redis
+      - LANGCHAIN4J_GEMINI_CHAT_MODEL_API_KEY=${GOOGLE_API_KEY}
+    env_file:
+      - .env
+    depends_on:
+      - qdrant
+      - postgres
+  #    volumes:
+  #      - ./src:/app/src # mounting src is harder with compiled java, removed for now
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: chatbot_qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  postgres:
+    image: postgres:15
+    container_name: chatbot_postgres
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: chatbot_loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./config/loki-config.yaml:/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: chatbot_promtail
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config/promtail-config.yaml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: chatbot_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: chatbot_grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - loki
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: chatbot_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - app
+
+  redis:
+    image: redis:7-alpine
+    container_name: chatbot_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+
+volumes:
+  qdrant_data:
+  postgres_data:
+  redis_data:

@@ -1,0 +1,92 @@
+import React, {createContext, type ReactNode, useCallback, useContext, useEffect, useState} from 'react';
+import api from '../services/api';
+
+interface AuthContextType {
+    isAuthenticated: boolean;
+    userId: string | null;
+    username: string | null;
+    login: (token: string, refreshToken: string, id: string, user: string) => void;
+    logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [username, setUsername] = useState<string | null>(null);
+
+    useEffect(() => {
+        const token = localStorage.getItem('jwtToken');
+        const storedUserId = localStorage.getItem('userId');
+        const storedUsername = localStorage.getItem('username');
+
+        if (token && storedUserId && storedUsername) {
+            setIsAuthenticated(true);
+            setUserId(storedUserId);
+            setUsername(storedUsername);
+        } else {
+            // Clear any partial data if one is missing
+            localStorage.removeItem('jwtToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+        }
+    }, []);
+
+    const login = useCallback((token: string, refreshToken: string, id: string, user: string) => {
+        localStorage.setItem('jwtToken', token);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('userId', id);
+        localStorage.setItem('username', user);
+        setIsAuthenticated(true);
+        setUserId(id);
+        setUsername(user);
+    }, []);
+
+    const logout = useCallback(() => {
+        localStorage.removeItem('jwtToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('username');
+        setIsAuthenticated(false);
+        setUserId(null);
+        setUsername(null);
+        // Redirect to login page upon logout
+        window.location.href = '/login';
+    }, []);
+
+    // Set up Axios interceptor for 401 errors to trigger logout
+    useEffect(() => {
+        const interceptor = api.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                // If error is 401 and it's not a refresh token request trying to get new token
+                // (which is handled by the api.ts interceptor itself)
+                if (error.response?.status === 401 && !error.config._retry) {
+                    console.log('401 Unauthorized detected by AuthContext, triggering logout...');
+                    logout();
+                }
+                return Promise.reject(error);
+            }
+        );
+
+        return () => {
+            api.interceptors.response.eject(interceptor);
+        };
+    }, [logout]);
+
+    return (
+        <AuthContext.Provider value={{ isAuthenticated, userId, username, login, logout }}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
+
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+};
