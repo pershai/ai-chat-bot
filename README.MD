@@ -29,6 +29,10 @@ A Spring Boot-based AI chat application that leverages Gemini AI for natural lan
 - **Monitoring**: Prometheus, Loki, Promtail, Grafana
 - **Build Tool**: Maven
 
+## Embedding Models
+
+The application supports multiple embedding model providers (Hugging Face, Google AI) for document vectorization and retrieval. See [docs/EMBEDDING_MODELS.md](docs/EMBEDDING_MODELS.md) for detailed configuration options and how to switch between providers.
+
 ## Prerequisites
 
 - **Docker & Docker Compose** (Recommended for easy setup)
