@@ -1,6 +1,7 @@
 package com.example.aichatbot.service;
 
 import com.example.aichatbot.dto.StatisticsDto;
+import com.example.aichatbot.dto.UserStatisticsDto;
 import com.example.aichatbot.repository.ConversationRepository;
 import com.example.aichatbot.repository.DocumentRepository;
 import com.example.aichatbot.repository.MessageRepository;
@@ -20,9 +21,9 @@ public class StatisticsService {
     private final DocumentRepository documentRepository;
 
     public StatisticsService(UserRepository userRepository,
-            ConversationRepository conversationRepository,
-            MessageRepository messageRepository,
-            DocumentRepository documentRepository) {
+                             ConversationRepository conversationRepository,
+                             MessageRepository messageRepository,
+                             DocumentRepository documentRepository) {
         this.userRepository = userRepository;
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
@@ -40,7 +41,7 @@ public class StatisticsService {
         Long totalInputTokens = messageRepository.sumInputTokens();
         Long totalOutputTokens = messageRepository.sumOutputTokens();
         long totalTokens = (totalInputTokens != null ? totalInputTokens : 0)
-                + (totalOutputTokens != null ? totalOutputTokens : 0);
+                           + (totalOutputTokens != null ? totalOutputTokens : 0);
 
         return new StatisticsDto(
                 totalUsers,
@@ -53,11 +54,11 @@ public class StatisticsService {
 
     /**
      * Get statistics for a specific user
-     * 
+     *
      * @param userId the user ID
      * @return user-specific statistics
      */
-    public StatisticsDto getUserStatistics(Integer userId) {
+    public UserStatisticsDto getUserStatistics(Integer userId) {
         long userConversations = conversationRepository.countByUserId(userId);
         long userMessages = messageRepository.countByConversationUserId(userId);
         long totalMessages = messageRepository.count(); // Keep for context
@@ -68,9 +69,9 @@ public class StatisticsService {
         Long userInputTokens = messageRepository.sumInputTokensByUserId(userId);
         Long userOutputTokens = messageRepository.sumOutputTokensByUserId(userId);
         long userTotalTokens = (userInputTokens != null ? userInputTokens : 0)
-                + (userOutputTokens != null ? userOutputTokens : 0);
+                               + (userOutputTokens != null ? userOutputTokens : 0);
 
-        return new StatisticsDto(
+        return new UserStatisticsDto(
                 userConversations,
                 userMessages,
                 totalMessages,

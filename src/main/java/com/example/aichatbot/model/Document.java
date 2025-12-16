@@ -36,6 +36,9 @@ public class Document {
     @Column(name = "upload_date")
     private LocalDateTime uploadDate = LocalDateTime.now();
 
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+
     // Optional: One-to-Many relationship mapping if needed later
     // @ManyToOne
     // @JoinColumn(name = "user_id", insertable = false, updatable = false)

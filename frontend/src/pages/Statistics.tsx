@@ -4,11 +4,19 @@ import { Activity, BarChart3, FileText, MessageSquare, TrendingUp } from 'lucide
 import api from '../services/api';
 
 interface Stats {
-    totalUsers: number;
-    totalConversations: number;
+    // For system-wide stats
+    totalUsers?: number;
+    totalConversations?: number;
+    // For user stats
+    myConversations?: number;
+    myMessages?: number;
+    // Common fields
     totalMessages: number;
     totalDocuments: number;
-    activeConversations24h: number;
+    activeConversations24h?: number;
+    myActiveConversations24h?: number;
+    totalTokens?: number;
+    myTotalTokens?: number;
 }
 
 export default function Statistics() {
@@ -27,7 +35,7 @@ export default function Statistics() {
     const fetchStatistics = async () => {
         try {
             const userId = localStorage.getItem('userId');
-            const url = userId ? `/ statistics ? userId = ${userId} ` : '/statistics';
+            const url = userId ? `/statistics?userId=${userId}` : '/statistics';
             const response = await api.get(url);
             setStats(response.data);
             setError(null);
@@ -41,7 +49,7 @@ export default function Statistics() {
     const statCards = stats ? [
         {
             title: 'My Conversations',
-            value: stats.totalUsers,
+            value: stats.myConversations || stats.totalConversations || 0,
             icon: MessageSquare,
             color: 'green',
             bgColor: 'bg-green-900/30',
@@ -50,7 +58,7 @@ export default function Statistics() {
         },
         {
             title: 'My Messages',
-            value: stats.totalConversations,
+            value: stats.myMessages || stats.totalMessages || 0,
             icon: Activity,
             color: 'purple',
             bgColor: 'bg-purple-900/30',
@@ -77,7 +85,7 @@ export default function Statistics() {
         },
         {
             title: 'My Active (24h)',
-            value: stats.activeConversations24h,
+            value: stats.myActiveConversations24h || stats.activeConversations24h || 0,
             icon: TrendingUp,
             color: 'cyan',
             bgColor: 'bg-cyan-900/30',
@@ -167,8 +175,8 @@ export default function Statistics() {
                                         <div className="bg-gray-700/50 rounded-lg p-4">
                                             <p className="text-gray-400 text-sm">Avg Messages/Conversation</p>
                                             <p className="text-2xl font-bold text-white mt-1">
-                                                {stats && stats.totalUsers > 0
-                                                    ? (stats.totalConversations / stats.totalUsers).toFixed(1)
+                                                {stats && (stats.myConversations || stats.totalConversations || 0) > 0
+                                                    ? ((stats.myMessages || stats.totalMessages || 0) / (stats.myConversations || stats.totalConversations || 1)).toFixed(1)
                                                     : '0'}
                                             </p>
                                         </div>
@@ -176,15 +184,15 @@ export default function Statistics() {
                                             <p className="text-gray-400 text-sm">% of Total Messages</p>
                                             <p className="text-2xl font-bold text-white mt-1">
                                                 {stats && stats.totalMessages > 0
-                                                    ? ((stats.totalConversations / stats.totalMessages) * 100).toFixed(1)
+                                                    ? (((stats.myMessages || 0) / stats.totalMessages) * 100).toFixed(1)
                                                     : '0'}%
                                             </p>
                                         </div>
                                         <div className="bg-gray-700/50 rounded-lg p-4">
                                             <p className="text-gray-400 text-sm">Activity Rate (24h)</p>
                                             <p className="text-2xl font-bold text-white mt-1">
-                                                {stats && stats.totalUsers > 0
-                                                    ? ((stats.activeConversations24h / stats.totalUsers) * 100).toFixed(0)
+                                                {stats && (stats.myConversations || stats.totalConversations || 0) > 0
+                                                    ? (((stats.myActiveConversations24h || stats.activeConversations24h || 0) / (stats.myConversations || stats.totalConversations || 1)) * 100).toFixed(0)
                                                     : '0'}%
                                             </p>
                                         </div>
