@@ -1,6 +1,9 @@
 package com.example.aichatbot.controller;
 
 import com.example.aichatbot.dto.DocumentDto;
+import com.example.aichatbot.dto.UpdateDocumentRequest;
+import com.example.aichatbot.exception.DocumentUpdateException;
+import com.example.aichatbot.exception.ResourceNotFoundException;
 import com.example.aichatbot.model.IngestionJob;
 import com.example.aichatbot.security.JwtAuthenticationFilter;
 import com.example.aichatbot.service.DocumentService;
@@ -18,10 +21,13 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -152,5 +158,86 @@ class DocumentControllerTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$[0].filename").value("test.pdf"))
                                 .andExpect(jsonPath("$[0].fileType").value("PDF"));
+        }
+
+        @Test
+        void updateDocument_ValidRequest_ReturnsOk() throws Exception {
+                // Arrange
+                DocumentDto updatedDoc = DocumentDto.builder()
+                                .id(1)
+                                .filename("updated.txt")
+                                .summary("Updated summary")
+                                .build();
+
+                when(documentService.updateDocument(anyInt(), anyInt(), any(UpdateDocumentRequest.class)))
+                                .thenReturn(updatedDoc);
+
+                // Act & Assert
+                mockMvc.perform(patch("/api/v1/documents/1")
+                                .param("userId", "1")
+                                .contentType("application/json")
+                                .content("{\"filename\":\"updated.txt\", \"summary\":\"Updated summary\"}"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.filename").value("updated.txt"))
+                                .andExpect(jsonPath("$.summary").value("Updated summary"));
+        }
+
+        @Test
+        void updateDocument_ExistingSummary_ReturnsBadRequest() throws Exception {
+                // Arrange
+                doThrow(new DocumentUpdateException("Cannot update document with existing summary"))
+                                .when(documentService)
+                                .updateDocument(anyInt(), anyInt(), any(UpdateDocumentRequest.class));
+
+                // Act & Assert
+                mockMvc.perform(patch("/api/v1/documents/1")
+                                .param("userId", "1")
+                                .contentType("application/json")
+                                .content("{\"filename\":\"updated.txt\"}"))
+                                .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void updateDocument_DocumentNotFound_ReturnsNotFound() throws Exception {
+                // Arrange
+                doThrow(new ResourceNotFoundException("Document", 1))
+                                .when(documentService)
+                                .updateDocument(anyInt(), anyInt(), any(UpdateDocumentRequest.class));
+
+                // Act & Assert
+                mockMvc.perform(patch("/api/v1/documents/1")
+                                .param("userId", "1")
+                                .contentType("application/json")
+                                .content("{\"filename\":\"updated.txt\"}"))
+                                .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void updateDocument_MissingUserId_ReturnsBadRequest() throws Exception {
+                // Act & Assert
+                mockMvc.perform(patch("/api/v1/documents/1")
+                                .contentType("application/json")
+                                .content("{\"filename\":\"updated.txt\"}"))
+                                .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void updateDocument_MissingBody_ReturnsOk() throws Exception {
+                // Arrange
+                DocumentDto updatedDoc = DocumentDto.builder()
+                                .id(1)
+                                .filename("test.txt")
+                                .summary("Regenerated summary")
+                                .build();
+
+                // When request body is null in controller, it creates a new empty request
+                // object
+                when(documentService.updateDocument(anyInt(), anyInt(), any(UpdateDocumentRequest.class)))
+                                .thenReturn(updatedDoc);
+
+                // Act & Assert
+                mockMvc.perform(patch("/api/v1/documents/1")
+                                .param("userId", "1"))
+                                .andExpect(status().isOk());
         }
 }

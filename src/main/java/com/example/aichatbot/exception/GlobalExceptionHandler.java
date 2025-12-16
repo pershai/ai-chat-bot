@@ -3,6 +3,7 @@ package com.example.aichatbot.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -128,6 +129,31 @@ public class GlobalExceptionHandler {
         problem.setProperty("timestamp", Instant.now());
         problem.setProperty("path", getPath(request));
         problem.setProperty("message", ex.getMessage());
+        return problem;
+    }
+
+    @ExceptionHandler(DocumentUpdateException.class)
+    public ProblemDetail handleDocumentUpdateException(DocumentUpdateException ex, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage());
+        problem.setTitle("Document Update Failed");
+        problem.setType(URI.create(ERROR_TYPE_BASE + "document-update-error"));
+        problem.setProperty("timestamp", Instant.now());
+        problem.setProperty("path", getPath(request));
+        return problem;
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ProblemDetail handleMissingServletRequestParameterException(
+            org.springframework.web.bind.MissingServletRequestParameterException ex, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage());
+        problem.setTitle("Bad Request");
+        problem.setType(URI.create(ERROR_TYPE_BASE + "bad-request"));
+        problem.setProperty("timestamp", Instant.now());
+        problem.setProperty("path", getPath(request));
         return problem;
     }
 

@@ -11,6 +11,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import com.example.aichatbot.dto.UpdateDocumentRequest;
+import com.example.aichatbot.exception.DocumentUpdateException;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -47,7 +52,6 @@ public class DocumentController {
                 validPaths.add(path);
             }
 
-            // Publish Event
             IngestionEvent event = new IngestionEvent(
                     job.getJobId(), effectiveUserId, validPaths);
 
@@ -77,5 +81,21 @@ public class DocumentController {
             @RequestParam(value = "userId", required = false) Integer userId) {
         Integer effectiveUserId = userId != null ? userId : 1;
         return ResponseEntity.ok(documentService.getDocuments(effectiveUserId));
+    }
+
+    @PatchMapping("/{documentId}")
+    public ResponseEntity<DocumentDto> updateDocument(
+            @PathVariable Integer documentId,
+            @RequestParam("userId") Integer userId,
+            @RequestBody(required = false) @Valid UpdateDocumentRequest request) {
+        if (request == null) {
+            request = new UpdateDocumentRequest();
+        }
+        try {
+            DocumentDto documentDto = documentService.updateDocument(documentId, userId, request);
+            return ResponseEntity.ok(documentDto);
+        } catch (IllegalStateException e) {
+            throw new DocumentUpdateException(e.getMessage());
+        }
     }
 }

@@ -33,7 +33,6 @@ public class ChatService {
     @CircuitBreaker(name = "gemini", fallbackMethod = "processChatFallback")
     public String processChat(Integer userId, Integer conversationId, String message, BotConfigDto botConfig) {
         try {
-            // LangGraph State Setup
             Map<String, Object> inputs = new HashMap<>();
             inputs.put("query", message);
             inputs.put("conversationId", String.valueOf(conversationId));
@@ -62,7 +61,6 @@ public class ChatService {
         } catch (Exception e) {
             log.error("Error processing chat for user {}: {}", userId, e.getMessage(), e);
 
-            // Check if this is a Gemini API quota exceeded error
             String errorMessage = e.getMessage();
             if (errorMessage != null && errorMessage.contains("RESOURCE_EXHAUSTED")) {
                 String retryAfter = extractRetryTime(errorMessage);
