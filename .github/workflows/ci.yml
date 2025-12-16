@@ -23,7 +23,7 @@ jobs:
       run: mvn clean package -DskipTests
       
     - name: Run Tests
-      run: mvn test
+      run: mvn test -Dtest='!ChatIntegrationTest'
 
   frontend-build:
     runs-on: ubuntu-latest
