@@ -7,8 +7,9 @@ import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
+import dev.langchain4j.model.googleai.GoogleAiEmbeddingModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
+import dev.langchain4j.model.huggingface.HuggingFaceEmbeddingModel;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
@@ -55,6 +56,17 @@ public class AiConfig {
     @Value("${langchain4j.document.splitter.maxResults}")
     private int maxResults;
 
+    @Value("${langchain4j.embedding.provider:huggingface}")
+    private String embeddingProvider;
+    @Value("${langchain4j.embedding.huggingface.api-key:}")
+    private String huggingfaceApiKey;
+    @Value("${langchain4j.embedding.huggingface.model-name:sentence-transformers/all-MiniLM-L6-v2}")
+    private String huggingfaceModelName;
+    @Value("${langchain4j.embedding.huggingface.timeout:30}")
+    private Integer huggingfaceTimeout;
+    @Value("${langchain4j.embedding.google.model-name:text-embedding-004}")
+    private String googleEmbeddingModel;
+
     @Bean
     public ChatModel chatLanguageModel() {
         return GoogleAiGeminiChatModel.builder()
@@ -67,7 +79,33 @@ public class AiConfig {
 
     @Bean
     public EmbeddingModel embeddingModel() {
-        return new AllMiniLmL6V2EmbeddingModel();
+        log.info("Initializing embedding model with provider: {}", embeddingProvider);
+
+        return switch (embeddingProvider.toLowerCase()) {
+            case "google" -> GoogleAiEmbeddingModel.builder()
+                    .apiKey(googleApiKey)
+                    .modelName(googleEmbeddingModel)
+                    .timeout(Duration.ofSeconds(timeout))
+                    .build();
+
+            case "huggingface" -> {
+                if (huggingfaceApiKey == null || huggingfaceApiKey.isEmpty()) {
+                    throw new IllegalStateException(
+                            "HUGGINGFACE_API_KEY is required when using HuggingFace embeddings. "
+                                    + "Get your API key from https://huggingface.co/settings/tokens");
+                }
+                log.info("Using HuggingFace model: {}", huggingfaceModelName);
+                yield HuggingFaceEmbeddingModel.builder()
+                        .accessToken(huggingfaceApiKey)
+                        .modelId(huggingfaceModelName)
+                        .timeout(Duration.ofSeconds(huggingfaceTimeout))
+                        .build();
+            }
+
+            default -> throw new IllegalArgumentException(
+                    "Unknown embedding provider: " + embeddingProvider +
+                            ". Supported providers: google, huggingface");
+        };
     }
 
     @Bean
@@ -84,11 +122,11 @@ public class AiConfig {
             if (exists != null && !exists) {
                 log.info("Creating collection '{}'", collectionName);
                 client.createCollectionAsync(
-                                collectionName,
-                                Collections.VectorParams.newBuilder()
-                                        .setSize(embeddingModel().dimension())
-                                        .setDistance(Collections.Distance.Cosine)
-                                        .build())
+                        collectionName,
+                        Collections.VectorParams.newBuilder()
+                                .setSize(embeddingModel().dimension())
+                                .setDistance(Collections.Distance.Cosine)
+                                .build())
                         .get();
             }
         } catch (Exception e) {
@@ -118,7 +156,7 @@ public class AiConfig {
 
     @Bean
     public ContentRetriever contentRetriever(EmbeddingStore<TextSegment> embeddingStore,
-                                             EmbeddingModel embeddingModel) {
+            EmbeddingModel embeddingModel) {
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(embeddingStore)
                 .embeddingModel(embeddingModel)
