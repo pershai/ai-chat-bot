@@ -1,6 +1,7 @@
 package com.example.aichatbot.controller;
 
 import com.example.aichatbot.dto.StatisticsDto;
+import com.example.aichatbot.dto.UserStatisticsDto;
 import com.example.aichatbot.security.JwtAuthenticationFilter;
 import com.example.aichatbot.service.StatisticsService;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,5 +48,25 @@ class StatisticsControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalUsers").value(10))
                 .andExpect(jsonPath("$.totalConversations").value(20));
+    }
+
+    @Test
+    void getUserStatistics_ReturnsUserStats() throws Exception {
+        // Arrange
+        Integer userId = 123;
+        UserStatisticsDto mockUserStats = new UserStatisticsDto(5, 50, 1000, 10, 1, 250);
+
+        when(statisticsService.getUserStatistics(userId)).thenReturn(mockUserStats);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/v1/statistics")
+                        .param("userId", userId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.myConversations").value(5))
+                .andExpect(jsonPath("$.myMessages").value(50))
+                .andExpect(jsonPath("$.totalMessages").value(1000))
+                .andExpect(jsonPath("$.totalDocuments").value(10))
+                .andExpect(jsonPath("$.myActiveConversations24h").value(1))
+                .andExpect(jsonPath("$.myTotalTokens").value(250));
     }
 }

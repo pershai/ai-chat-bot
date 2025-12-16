@@ -4,6 +4,7 @@ import com.example.aichatbot.dto.DocumentDto;
 import com.example.aichatbot.repository.DocumentRepository;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DocumentService {
 
+    private final ChatModel chatModel;
     private final EmbeddingStoreIngestor ingestor;
     private final JobService jobService;
     private final DocumentRepository documentRepository;
@@ -57,8 +59,19 @@ public class DocumentService {
             dbDocument.setUserId(userId);
             dbDocument.setFileType(getFileExtension(filename));
             dbDocument.setUploadDate(LocalDateTime.now());
-            documentRepository.save(dbDocument);
 
+            try {
+                String text = document.text();
+                if (text != null && !text.isBlank()) {
+                    String limitedText = text.substring(0, Math.min(text.length(), 2000));
+                    String prompt = "Summarize the following text in 50 words or less:\n\n" + limitedText;
+                    String summary = chatModel.chat(prompt);
+                    dbDocument.setSummary(summary);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to generate summary for document {}", filename, e);
+            }
+            documentRepository.save(dbDocument);
             log.info("Saved document {} for user {}", filename, userId);
         }
     }
@@ -75,6 +88,7 @@ public class DocumentService {
                         .filename(doc.getFilename())
                         .fileType(doc.getFileType())
                         .uploadDate(doc.getUploadDate())
+                        .summary(doc.getSummary())
                         .build())
                 .collect(Collectors.toList());
     }

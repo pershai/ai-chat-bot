@@ -3,6 +3,7 @@ package com.example.aichatbot.service;
 import com.example.aichatbot.repository.DocumentRepository;
 import com.example.aichatbot.service.storage.FileStorageService;
 import dev.langchain4j.data.document.Document;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ class DocumentServiceTest {
 
     @Mock
     private EmbeddingStoreIngestor ingestor;
+
+    @Mock
+    private ChatModel chatModel;
 
     @Mock
     private JobService jobService;

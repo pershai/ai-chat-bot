@@ -20,7 +20,8 @@ interface JobStatus {
 interface Document {
     id: number;
     filename: string;
-    fileType: string;
+    fileType?: string;
+    summary?: string;
     uploadDate: string;
 }
 
@@ -104,7 +105,7 @@ export default function Documents() {
             // Poll job status
             const pollInterval = setInterval(async () => {
                 try {
-                    const statusResponse = await api.get(`/ documents / status / ${newJobId} `);
+                    const statusResponse = await api.get(`/documents/status/${newJobId}`);
                     setJobStatus(statusResponse.data);
 
                     if (statusResponse.data.status === 'COMPLETED') {
@@ -136,13 +137,6 @@ export default function Documents() {
         }
     };
 
-    const formatFileSize = (bytes: number) => {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-    };
 
     const progress = jobStatus
         ? Math.round((jobStatus.processedFiles / jobStatus.totalFiles) * 100)
@@ -181,7 +175,7 @@ export default function Documents() {
                             {/* Dropzone */}
                             <div
                                 {...getRootProps()}
-                                className={`border - 2 border - dashed rounded - xl p - 12 text - center cursor - pointer transition - all ${isDragActive
+                                className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all ${isDragActive
                                     ? 'border-blue-500 bg-blue-900/20'
                                     : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'
                                     } `}
@@ -219,7 +213,15 @@ export default function Documents() {
                                                     <FileText className="w-5 h-5 text-blue-400 flex-shrink-0" />
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-sm text-gray-200 truncate">{file.name}</p>
-                                                        <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                                                        <p className="text-xs text-gray-500">
+                                                            {(file.size / 1024).toFixed(1)} KB • {file.type || 'Unknown'}
+                                                        </p>
+                                                        {/* Summary is not available on File object directly, assuming it would be added to UploadedFile if needed */}
+                                                        {/* {file.summary && (
+                                                            <p className="text-xs text-gray-400 mt-1 italic line-clamp-2">
+                                                                {file.summary}
+                                                            </p>
+                                                        )} */}
                                                     </div>
                                                 </div>
                                                 <button
@@ -332,6 +334,13 @@ export default function Documents() {
                                                 <Calendar className="w-3 h-3 mr-1" />
                                                 {new Date(doc.uploadDate).toLocaleDateString()}
                                             </div>
+                                            {doc.summary && (
+                                                <div className="mt-3 pt-3 border-t border-gray-700">
+                                                    <p className="text-xs text-gray-400 italic line-clamp-3">
+                                                        "{doc.summary}"
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

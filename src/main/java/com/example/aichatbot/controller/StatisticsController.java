@@ -1,6 +1,7 @@
 package com.example.aichatbot.controller;
 
 import com.example.aichatbot.dto.StatisticsDto;
+import com.example.aichatbot.dto.UserStatisticsDto;
 import com.example.aichatbot.service.StatisticsService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ public class StatisticsController {
     }
 
     @GetMapping
-    public ResponseEntity<StatisticsDto> getStatistics(
+    public ResponseEntity<?> getStatistics(
             @RequestParam(required = false) Integer userId) {
         if (userId != null) {
             return ResponseEntity.ok(statisticsService.getUserStatistics(userId));

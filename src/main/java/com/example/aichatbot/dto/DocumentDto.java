@@ -12,4 +12,5 @@ public class DocumentDto {
     private String filename;
     private String fileType;
     private LocalDateTime uploadDate;
+    private String summary;
 }
