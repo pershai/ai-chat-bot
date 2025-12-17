@@ -92,7 +92,7 @@ public class AiConfig {
                 if (huggingfaceApiKey == null || huggingfaceApiKey.isEmpty()) {
                     throw new IllegalStateException(
                             "HUGGINGFACE_API_KEY is required when using HuggingFace embeddings. "
-                                    + "Get your API key from https://huggingface.co/settings/tokens");
+                            + "Get your API key from https://huggingface.co/settings/tokens");
                 }
                 log.info("Using HuggingFace model: {}", huggingfaceModelName);
                 yield HuggingFaceEmbeddingModel.builder()
@@ -104,29 +104,32 @@ public class AiConfig {
 
             default -> throw new IllegalArgumentException(
                     "Unknown embedding provider: " + embeddingProvider +
-                            ". Supported providers: google, huggingface");
+                    ". Supported providers: google, huggingface");
         };
     }
 
     @Bean
+    public QdrantClient qdrantClient() {
+        return new QdrantClient(
+                QdrantGrpcClient.newBuilder(qdrantHost, qdrantPort, false).build());
+    }
+
+    @Bean
     @Primary
-    public EmbeddingStore<TextSegment> embeddingStore() {
+    public EmbeddingStore<TextSegment> embeddingStore(QdrantClient client) {
         log.info("Initializing embedding store at {}:{} with collection '{}'",
                 qdrantHost, qdrantPort, collectionName);
-
-        QdrantClient client = new QdrantClient(
-                QdrantGrpcClient.newBuilder(qdrantHost, qdrantPort, false).build());
 
         try {
             Boolean exists = client.collectionExistsAsync(collectionName).get();
             if (exists != null && !exists) {
                 log.info("Creating collection '{}'", collectionName);
                 client.createCollectionAsync(
-                        collectionName,
-                        Collections.VectorParams.newBuilder()
-                                .setSize(embeddingModel().dimension())
-                                .setDistance(Collections.Distance.Cosine)
-                                .build())
+                                collectionName,
+                                Collections.VectorParams.newBuilder()
+                                        .setSize(embeddingModel().dimension())
+                                        .setDistance(Collections.Distance.Cosine)
+                                        .build())
                         .get();
             }
         } catch (Exception e) {
@@ -156,7 +159,7 @@ public class AiConfig {
 
     @Bean
     public ContentRetriever contentRetriever(EmbeddingStore<TextSegment> embeddingStore,
-            EmbeddingModel embeddingModel) {
+                                             EmbeddingModel embeddingModel) {
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(embeddingStore)
                 .embeddingModel(embeddingModel)

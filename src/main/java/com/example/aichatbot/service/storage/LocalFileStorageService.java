@@ -40,7 +40,11 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public InputStream load(String filename) {
         try {
-            return Files.newInputStream(Paths.get(filename));
+            Path filePath = Paths.get(filename);
+            if (!Files.exists(filePath)) {
+                filePath = Paths.get(storagePath, Paths.get(filename).getFileName().toString());
+            }
+            return Files.newInputStream(filePath);
         } catch (IOException e) {
             throw new RuntimeException("Failed to load file " + filename, e);
         }

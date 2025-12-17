@@ -3,6 +3,7 @@ package com.example.aichatbot.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -19,7 +20,9 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private static final String ERROR_TYPE_BASE = "https://api.aichatbot.example.com/errors/";
-
+    private static final String TIMESTAMP = "timestamp";
+    private static final String PATH = "path";
+    
     @ExceptionHandler(IllegalArgumentException.class)
     public ProblemDetail handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
@@ -27,8 +30,8 @@ public class GlobalExceptionHandler {
                 ex.getMessage());
         problem.setTitle("Invalid Argument");
         problem.setType(URI.create(ERROR_TYPE_BASE + "invalid-argument"));
-        problem.setProperty("timestamp", Instant.now());
-        problem.setProperty("path", getPath(request));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        problem.setProperty(PATH, getPath(request));
         return problem;
     }
 
@@ -39,8 +42,8 @@ public class GlobalExceptionHandler {
                 ex.getMessage());
         problem.setTitle("Internal Server Error");
         problem.setType(URI.create(ERROR_TYPE_BASE + "internal-error"));
-        problem.setProperty("timestamp", Instant.now());
-        problem.setProperty("path", getPath(request));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        problem.setProperty(PATH, getPath(request));
         return problem;
     }
 
@@ -57,8 +60,8 @@ public class GlobalExceptionHandler {
                 "Validation failed: " + violations);
         problem.setTitle("Validation Error");
         problem.setType(URI.create(ERROR_TYPE_BASE + "validation-error"));
-        problem.setProperty("timestamp", Instant.now());
-        problem.setProperty("path", getPath(request));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        problem.setProperty(PATH, getPath(request));
         problem.setProperty("violations", ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -74,8 +77,20 @@ public class GlobalExceptionHandler {
                 ex.getMessage());
         problem.setTitle("Resource Not Found");
         problem.setType(URI.create(ERROR_TYPE_BASE + "not-found"));
-        problem.setProperty("timestamp", Instant.now());
-        problem.setProperty("path", getPath(request));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        problem.setProperty(PATH, getPath(request));
+        return problem;
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ProblemDetail handleUserNotFoundException(UserNotFoundException ex, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage());
+        problem.setTitle("User Not Found");
+        problem.setType(URI.create(ERROR_TYPE_BASE + "user-not-found"));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        problem.setProperty(PATH, getPath(request));
         return problem;
     }
 
@@ -86,8 +101,8 @@ public class GlobalExceptionHandler {
                 ex.getMessage());
         problem.setTitle("Authentication Failed");
         problem.setType(URI.create(ERROR_TYPE_BASE + "authentication-error"));
-        problem.setProperty("timestamp", Instant.now());
-        problem.setProperty("path", getPath(request));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        problem.setProperty(PATH, getPath(request));
         return problem;
     }
 
@@ -98,8 +113,8 @@ public class GlobalExceptionHandler {
                 ex.getMessage());
         problem.setTitle("API Quota Exceeded");
         problem.setType(URI.create(ERROR_TYPE_BASE + "quota-exceeded"));
-        problem.setProperty("timestamp", Instant.now());
-        problem.setProperty("path", getPath(request));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        problem.setProperty(PATH, getPath(request));
         if (ex.getRetryAfter() != null) {
             problem.setProperty("retryAfter", ex.getRetryAfter());
         }
@@ -113,8 +128,8 @@ public class GlobalExceptionHandler {
                 ex.getMessage());
         problem.setTitle("Service Unavailable");
         problem.setType(URI.create(ERROR_TYPE_BASE + "infrastructure-error"));
-        problem.setProperty("timestamp", Instant.now());
-        problem.setProperty("path", getPath(request));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        problem.setProperty(PATH, getPath(request));
         return problem;
     }
 
@@ -125,9 +140,34 @@ public class GlobalExceptionHandler {
                 "An unexpected error occurred");
         problem.setTitle("Internal Server Error");
         problem.setType(URI.create(ERROR_TYPE_BASE + "internal-error"));
-        problem.setProperty("timestamp", Instant.now());
-        problem.setProperty("path", getPath(request));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        problem.setProperty(PATH, getPath(request));
         problem.setProperty("message", ex.getMessage());
+        return problem;
+    }
+
+    @ExceptionHandler(DocumentUpdateException.class)
+    public ProblemDetail handleDocumentUpdateException(DocumentUpdateException ex, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage());
+        problem.setTitle("Document Update Failed");
+        problem.setType(URI.create(ERROR_TYPE_BASE + "document-update-error"));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        problem.setProperty(PATH, getPath(request));
+        return problem;
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ProblemDetail handleMissingServletRequestParameterException(
+            org.springframework.web.bind.MissingServletRequestParameterException ex, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage());
+        problem.setTitle("Bad Request");
+        problem.setType(URI.create(ERROR_TYPE_BASE + "bad-request"));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        problem.setProperty(PATH, getPath(request));
         return problem;
     }
 
