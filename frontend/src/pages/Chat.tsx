@@ -6,6 +6,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import axios from 'axios';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContextValues';
 import { twMerge } from 'tailwind-merge';
 
 interface Message {
@@ -75,6 +76,7 @@ const CodeBlock = ({ inline, className, children, ...props }: CodeBlockProps) =>
 };
 
 export default function Chat() {
+    const { userId, logout } = useAuth();
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -86,7 +88,6 @@ export default function Chat() {
 
     const fetchConversations = useCallback(async () => {
         try {
-            const userId = localStorage.getItem('userId');
             if (!userId) {
                 console.warn('No userId found, skipping conversation fetch');
                 setConversations([]);
@@ -108,7 +109,7 @@ export default function Chat() {
             console.error('Failed to fetch conversations', error);
             setConversations([]);
         }
-    }, [activeConversationId]);
+    }, [activeConversationId, userId]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -148,10 +149,7 @@ export default function Chat() {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('userId');
-        localStorage.removeItem('jwtToken');
-        localStorage.removeItem('username');
-        navigate('/login');
+        logout();
     };
 
     const deleteConversation = async (e: React.MouseEvent, id: string) => {

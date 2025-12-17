@@ -4,6 +4,7 @@ import { AlertCircle, Calendar, CheckCircle, File as FileIcon, FileText, Loader,
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContextValues';
 
 interface UploadedFile {
     file: File;
@@ -26,6 +27,7 @@ interface Document {
 }
 
 export default function Documents() {
+    const { userId } = useAuth();
     const [files, setFiles] = useState<UploadedFile[]>([]);
     const [uploading, setUploading] = useState(false);
     const [, setJobId] = useState<string | null>(null);
@@ -40,10 +42,10 @@ export default function Documents() {
     const navigate = useNavigate();
 
     const fetchDocuments = useCallback(async () => {
+        if (!userId) return;
         try {
-            const userId = localStorage.getItem('userId');
             const response = await api.get('/documents', {
-                params: { userId: userId || 1 }
+                params: { userId }
             });
             setDocuments(response.data);
         } catch (err) {
@@ -54,8 +56,10 @@ export default function Documents() {
     }, []);
 
     useEffect(() => {
-        fetchDocuments();
-    }, [fetchDocuments]);
+        if (userId) {
+            fetchDocuments();
+        }
+    }, [fetchDocuments, userId]);
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         const newFiles = acceptedFiles.map(file => ({
@@ -89,8 +93,7 @@ export default function Documents() {
             const formData = new FormData();
             files.forEach(({ file }) => formData.append('files', file));
 
-            // Add userId from localStorage
-            const userId = localStorage.getItem('userId');
+            // Add userId from context
             if (userId) {
                 formData.append('userId', userId);
             }

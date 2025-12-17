@@ -67,6 +67,7 @@ public class DocumentService {
             ApacheTikaDocumentParser parser = new ApacheTikaDocumentParser();
             Document document = parser.parse(inputStream);
             document.metadata().put("filename", fileStorageService.resolve(filename).getFileName().toString());
+            document.metadata().put("userId", userId.toString());
             ingestor.ingest(document);
 
             com.example.aichatbot.model.Document dbDocument = new com.example.aichatbot.model.Document();
@@ -159,17 +160,16 @@ public class DocumentService {
     private String fetchTextFromQdrant(String filename) {
         try {
             List<Points.RetrievedPoint> points = qdrantClient.scrollAsync(
-                    Points.ScrollPoints.newBuilder()
-                            .setCollectionName(collectionName)
-                            .setLimit(10)
-                            .setWithPayload(Points.WithPayloadSelector.newBuilder().setEnable(true).build())
-                            .setFilter(
-                                    Common.Filter.newBuilder()
-                                            .addMust(ConditionFactory.matchText("filename", filename))
-                                            .build()
-                            )
-                            .build()
-            ).get()
+                            Points.ScrollPoints.newBuilder()
+                                    .setCollectionName(collectionName)
+                                    .setLimit(10)
+                                    .setWithPayload(Points.WithPayloadSelector.newBuilder().setEnable(true).build())
+                                    .setFilter(
+                                            Common.Filter.newBuilder()
+                                                    .addMust(ConditionFactory.matchText("filename", filename))
+                                                    .build())
+                                    .build())
+                    .get()
                     .getResultList();
 
             return points.stream()

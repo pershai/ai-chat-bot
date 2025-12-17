@@ -36,6 +36,7 @@ public class ChatService {
             Map<String, Object> inputs = new HashMap<>();
             inputs.put("query", message);
             inputs.put("conversationId", String.valueOf(conversationId));
+            inputs.put("userId", userId);
 
             Optional<RagState> result = ragGraphRunner.invoke(inputs);
 
@@ -74,7 +75,7 @@ public class ChatService {
 
     @SuppressWarnings("unused")
     public String processChatFallback(Integer userId, Integer conversationId, String message, BotConfigDto botConfig,
-                                      Throwable t) {
+            Throwable t) {
         log.error("Circuit breaker open or exception fallback for user {}: {}", userId, t.getMessage());
         return "The AI service is currently unavailable. Please try again later.";
     }

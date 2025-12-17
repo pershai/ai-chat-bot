@@ -1,14 +1,16 @@
 package com.example.aichatbot.service.graph;
 
 import com.example.aichatbot.service.Assistant;
-import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.model.output.TokenUsage;
-import dev.langchain4j.rag.content.retriever.ContentRetriever;
-import dev.langchain4j.rag.query.Query;
+import dev.langchain4j.service.Result;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
+import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bsc.langgraph4j.CompiledGraph;
 import org.bsc.langgraph4j.StateGraph;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,8 +29,18 @@ import static org.bsc.langgraph4j.StateGraph.START;
 @RequiredArgsConstructor
 public class RagGraph {
 
-    private final ContentRetriever contentRetriever;
+    private final dev.langchain4j.store.embedding.EmbeddingStore<dev.langchain4j.data.segment.TextSegment> embeddingStore;
+    private final dev.langchain4j.model.embedding.EmbeddingModel embeddingModel;
     private final Assistant assistant;
+
+    @Value("${langchain4j.qdrant.collection-name}")
+    private String collectionName;
+
+    @Value("${langchain4j.document.splitter.maxResults}")
+    private int maxResults;
+
+    @Value("${langchain4j.gemini.chat-model.temperature}")
+    private Double minScore;
 
     public CompiledGraph<RagState> buildGraph() throws Exception {
         StateGraph<RagState> workflow = new StateGraph<>(RagState::new);
@@ -59,12 +71,24 @@ public class RagGraph {
 
     private CompletableFuture<Map<String, Object>> retrieve(RagState state) {
         return CompletableFuture.supplyAsync(() -> {
-            log.info("Retrieving documents for query: {}", state.getQuery());
-            List<dev.langchain4j.rag.content.Content> contents = contentRetriever.retrieve(new Query(state.getQuery()));
+            log.info("Retrieving documents for query: {} (User: {})", state.getQuery(), state.getUserId());
 
-            List<String> documents = contents.stream()
-                    .map(dev.langchain4j.rag.content.Content::textSegment)
-                    .map(TextSegment::text)
+            Embedding queryEmbedding = embeddingModel.embed(state.getQuery()).content();
+
+            EmbeddingSearchRequest request = EmbeddingSearchRequest
+                    .builder()
+                    .queryEmbedding(queryEmbedding)
+                    .maxResults(maxResults)
+                    .minScore(minScore)
+                    .filter(MetadataFilterBuilder.metadataKey("userId")
+                            .isEqualTo(String.valueOf(state.getUserId())))
+                    .build();
+
+            dev.langchain4j.store.embedding.EmbeddingSearchResult<dev.langchain4j.data.segment.TextSegment> result = embeddingStore
+                    .search(request);
+
+            List<String> documents = result.matches().stream()
+                    .map(match -> match.embedded().text())
                     .toList();
 
             return Map.of("documents", documents);
@@ -83,7 +107,7 @@ public class RagGraph {
                             "Query: " + state.getQuery() + "\n" +
                             "Documents: " + String.join("\n", state.getDocuments());
 
-            dev.langchain4j.service.Result<String> result = assistant.chat("temp-grade", "You are a grader.", prompt);
+            Result<String> result = assistant.chat("temp-grade", "You are a grader.", prompt);
             String response = result.content().trim().toLowerCase();
             boolean relevant = response.contains("yes");
             log.info("Relevance: {}", relevant);
@@ -100,7 +124,7 @@ public class RagGraph {
             log.info("Generating answer...");
             String context = String.join("\n\n", state.getDocuments());
             String prompt = "Context:\n" + context + "\n\nQuestion: " + state.getQuery();
-            dev.langchain4j.service.Result<String> result = assistant.chat(state.getConversationId(),
+            Result<String> result = assistant.chat(state.getConversationId(),
                     "You are a helpful assistant.", prompt);
 
             Map<String, Integer> usage = new java.util.HashMap<>(state.getTokenUsage());
@@ -116,7 +140,7 @@ public class RagGraph {
             String prompt = "The user asked: " + state.getQuery() +
                             ". We could not find relevant information in our knowledge base. " +
                             "Please ask for clarification or provide a general response.";
-            dev.langchain4j.service.Result<String> result = assistant.chat(state.getConversationId(),
+            Result<String> result = assistant.chat(state.getConversationId(),
                     "You are a helpful assistant.", prompt);
 
             Map<String, Integer> usage = new java.util.HashMap<>(state.getTokenUsage());
