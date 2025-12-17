@@ -53,7 +53,7 @@ export default function Documents() {
         } finally {
             setLoadingDocs(false);
         }
-    }, []);
+    }, [userId]);
 
     useEffect(() => {
         if (userId) {

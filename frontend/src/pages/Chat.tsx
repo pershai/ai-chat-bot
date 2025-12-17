@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BarChart3, Bot, Check, Copy, FileText, LogOut, Menu, MessageSquare, Plus, Send, Trash2, User, X } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -84,7 +84,7 @@ export default function Chat() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const navigate = useNavigate();
+
 
     const fetchConversations = useCallback(async () => {
         try {
