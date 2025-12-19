@@ -39,6 +39,10 @@ public class RagState extends AgentState {
         return (String) data().get("conversationId");
     }
 
+    public String getUserId() {
+        return (String) data().get("userId");
+    }
+
     @SuppressWarnings("unchecked")
     public Map<String, Integer> getTokenUsage() {
         return (Map<String, Integer>) data().getOrDefault("tokenUsage", new HashMap<>());

@@ -69,6 +69,15 @@ The application supports multiple embedding model providers (Hugging Face, Googl
     - Prometheus (Metrics): http://localhost:9090
     - Loki (Log Aggregation): http://localhost:3100
 
+### API Usage Notes
+
+#### Document Ingestion
+- **Endpoint**: `POST /api/v1/documents/ingest`
+- **Method**: `POST`
+- **Content-Type**: `multipart/form-data`
+- **Files Parameter**: Use the key **`files`** (the error "No files provided" indicates an incorrect key).
+- **Security**: Requires a valid JWT token in the `Authorization: Bearer <token>` header. The `userId` is derived automatically from the token.
+
 ## Development
 
 ### Backend

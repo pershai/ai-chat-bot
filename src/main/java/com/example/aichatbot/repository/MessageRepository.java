@@ -6,10 +6,10 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
-public interface MessageRepository extends JpaRepository<Message, Integer> {
-    List<Message> findByConversationId(Integer conversationId);
+public interface MessageRepository extends JpaRepository<Message, Long> {
+    List<Message> findByConversationId(Long conversationId);
 
-    long countByConversationUserId(Integer userId);
+    long countByConversationUserId(String userId);
 
     @Query("SELECT SUM(m.inputTokens) FROM Message m")
     Long sumInputTokens();
@@ -18,8 +18,8 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
     Long sumOutputTokens();
 
     @Query("SELECT SUM(m.inputTokens) FROM Message m WHERE m.conversation.userId = :userId")
-    Long sumInputTokensByUserId(Integer userId);
+    Long sumInputTokensByUserId(String userId);
 
     @Query("SELECT SUM(m.outputTokens) FROM Message m WHERE m.conversation.userId = :userId")
-    Long sumOutputTokensByUserId(Integer userId);
+    Long sumOutputTokensByUserId(String userId);
 }

@@ -2,9 +2,13 @@ package com.example.aichatbot.service.graph;
 
 import com.example.aichatbot.service.Assistant;
 import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.output.TokenUsage;
-import dev.langchain4j.rag.content.retriever.ContentRetriever;
-import dev.langchain4j.rag.query.Query;
+import dev.langchain4j.service.Result;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
+import dev.langchain4j.store.embedding.EmbeddingSearchResult;
+import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bsc.langgraph4j.CompiledGraph;
@@ -27,7 +31,8 @@ import static org.bsc.langgraph4j.StateGraph.START;
 @RequiredArgsConstructor
 public class RagGraph {
 
-    private final ContentRetriever contentRetriever;
+    private final EmbeddingStore<TextSegment> embeddingStore;
+    private final EmbeddingModel embeddingModel;
     private final Assistant assistant;
 
     public CompiledGraph<RagState> buildGraph() throws Exception {
@@ -59,12 +64,25 @@ public class RagGraph {
 
     private CompletableFuture<Map<String, Object>> retrieve(RagState state) {
         return CompletableFuture.supplyAsync(() -> {
-            log.info("Retrieving documents for query: {}", state.getQuery());
-            List<dev.langchain4j.rag.content.Content> contents = contentRetriever.retrieve(new Query(state.getQuery()));
+            log.info("Retrieving documents for query: {} and user: {}", state.getQuery(), state.getUserId());
 
-            List<String> documents = contents.stream()
-                    .map(dev.langchain4j.rag.content.Content::textSegment)
-                    .map(TextSegment::text)
+            // Embed the query
+            dev.langchain4j.data.embedding.Embedding queryEmbedding = embeddingModel.embed(state.getQuery()).content();
+
+            // Search with filter
+            EmbeddingSearchRequest request = EmbeddingSearchRequest
+                    .builder()
+                    .queryEmbedding(queryEmbedding)
+                    .filter(MetadataFilterBuilder.metadataKey("userId")
+                            .isEqualTo(state.getUserId()))
+                    .maxResults(5) // Default or config
+                    .minScore(0.7) // Default or config
+                    .build();
+
+            EmbeddingSearchResult<TextSegment> result = embeddingStore.search(request);
+
+            List<String> documents = result.matches().stream()
+                    .map(match -> match.embedded().text())
                     .toList();
 
             return Map.of("documents", documents);
@@ -83,7 +101,7 @@ public class RagGraph {
                             "Query: " + state.getQuery() + "\n" +
                             "Documents: " + String.join("\n", state.getDocuments());
 
-            dev.langchain4j.service.Result<String> result = assistant.chat("temp-grade", "You are a grader.", prompt);
+            Result<String> result = assistant.chat("temp-grade", "You are a grader.", prompt);
             String response = result.content().trim().toLowerCase();
             boolean relevant = response.contains("yes");
             log.info("Relevance: {}", relevant);

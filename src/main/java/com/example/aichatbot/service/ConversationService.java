@@ -25,28 +25,28 @@ public class ConversationService {
         this.messageRepository = messageRepository;
     }
 
-    public Conversation createConversation(Integer userId, String title) {
+    public Conversation createConversation(String userId, String title) {
         Conversation conversation = new Conversation();
         conversation.setUserId(userId);
         conversation.setTitle(title);
         return conversationRepository.save(conversation);
     }
 
-    public List<Conversation> getUserConversations(Integer userId) {
+    public List<Conversation> getUserConversations(String userId) {
         return conversationRepository.findByUserIdOrderByUpdatedAtDesc(userId);
     }
 
-    public Optional<Conversation> getConversation(Integer id) {
+    public Optional<Conversation> getConversation(Long id) {
         return conversationRepository.findById(id);
     }
 
     @CacheEvict(value = "messages", key = "#conversationId")
-    public Message addMessage(Integer conversationId, String role, String content) {
+    public Message addMessage(Long conversationId, String role, String content) {
         return addMessage(conversationId, role, content, 0, 0);
     }
 
     @CacheEvict(value = "messages", key = "#conversationId")
-    public Message addMessage(Integer conversationId, String role, String content, int inputTokens, int outputTokens) {
+    public Message addMessage(Long conversationId, String role, String content, int inputTokens, int outputTokens) {
         Conversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Conversation", conversationId));
 
@@ -64,12 +64,12 @@ public class ConversationService {
     }
 
     @Cacheable(value = "messages", key = "#conversationId")
-    public List<Message> getConversationMessages(Integer conversationId) {
+    public List<Message> getConversationMessages(Long conversationId) {
         return messageRepository.findByConversationId(conversationId);
     }
 
     @CacheEvict(value = "messages", key = "#id")
-    public void deleteConversation(Integer id) {
+    public void deleteConversation(Long id) {
         conversationRepository.deleteById(id);
     }
 }

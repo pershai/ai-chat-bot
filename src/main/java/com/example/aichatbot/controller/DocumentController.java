@@ -1,10 +1,18 @@
 package com.example.aichatbot.controller;
 
 import com.example.aichatbot.dto.DocumentDto;
+import com.example.aichatbot.exception.UserNotFoundException;
 import com.example.aichatbot.model.IngestionEvent;
 import com.example.aichatbot.model.IngestionJob;
+import com.example.aichatbot.model.User;
+import com.example.aichatbot.repository.UserRepository;
+import com.example.aichatbot.service.DocumentService;
 import com.example.aichatbot.service.JobService;
+import com.example.aichatbot.service.messaging.IngestionProducer;
+import com.example.aichatbot.service.storage.FileStorageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,49 +23,78 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/documents")
 @RequiredArgsConstructor
 public class DocumentController {
 
     private final JobService jobService;
-    private final com.example.aichatbot.service.messaging.IngestionProducer ingestionProducer;
-    private final com.example.aichatbot.service.storage.FileStorageService fileStorageService;
-    private final com.example.aichatbot.service.DocumentService documentService;
+    private final IngestionProducer ingestionProducer;
+    private final FileStorageService fileStorageService;
+    private final DocumentService documentService;
+    private final UserRepository userRepository;
 
     @PostMapping("/ingest")
     public ResponseEntity<Map<String, String>> ingestDocs(
             @RequestParam(value = "files", required = false) List<MultipartFile> files,
-            @RequestParam(value = "userId", required = false) Integer userId) {
-        if (files == null || files.isEmpty()) {
-            return ResponseEntity.badRequest().build();
+            Principal principal) {
+
+        if (principal == null) {
+            log.error("Ingestion request received but Principal is null. Ensure security is correctly configured.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized"));
         }
 
-        Integer effectiveUserId = userId != null ? userId : 1;
+        log.info("Ingestion request received from user: {}. Number of files: {}",
+                principal.getName(), (files != null ? files.size() : 0));
+
+        if (files == null || files.isEmpty()) {
+            log.warn("Ingestion request from {} failed: No files provided", principal.getName());
+            return ResponseEntity.badRequest().body(Map.of("error",
+                    "No files provided for ingestion. Ensure 'files' field is present in multipart/form-data."));
+        }
+
+        User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + principal.getName()));
+
+        String userId = user.getId();
+        log.debug("Found user {} with ID {}", user.getUsername(), userId);
+
         IngestionJob job = jobService.createJob(files.size());
         List<String> validPaths = new ArrayList<>();
 
         try {
             for (MultipartFile file : files) {
+                if (file.isEmpty()) {
+                    log.warn("Skipping empty file: {}", file.getOriginalFilename());
+                    continue;
+                }
                 String path = fileStorageService.store(file.getInputStream(), file.getOriginalFilename());
                 validPaths.add(path);
+                log.debug("Stored file: {} at {}", file.getOriginalFilename(), path);
+            }
+
+            if (validPaths.isEmpty()) {
+                log.warn("No valid files were stored from the request");
+                return ResponseEntity.badRequest().body(Map.of("error", "All provided files were empty"));
             }
 
             // Publish Event
-            IngestionEvent event = new IngestionEvent(
-                    job.getJobId(), effectiveUserId, validPaths);
-
+            IngestionEvent event = new IngestionEvent(job.getJobId(), userId, validPaths);
             ingestionProducer.publish(event);
+            log.info("Ingestion job {} queued with {} files for user {}", job.getJobId(), validPaths.size(), userId);
 
             return ResponseEntity.accepted().body(Map.of(
                     "message", "Processing queued",
                     "jobId", job.getJobId()));
 
         } catch (IOException e) {
+            log.error("Failed to store files for job {}: {}", job.getJobId(), e.getMessage(), e);
             jobService.addError(job.getJobId(), "Failed to save files: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
@@ -73,9 +110,13 @@ public class DocumentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DocumentDto>> getDocuments(
-            @RequestParam(value = "userId", required = false) Integer userId) {
-        Integer effectiveUserId = userId != null ? userId : 1;
-        return ResponseEntity.ok(documentService.getDocuments(effectiveUserId));
+    public ResponseEntity<List<DocumentDto>> getDocuments(Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).build();
+        }
+        User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + principal.getName()));
+
+        return ResponseEntity.ok(documentService.getDocuments(user.getId()));
     }
 }
