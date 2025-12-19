@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
     ChevronLeft,
     LogOut,
-    MessageSquare,
     MoreVertical,
     Search,
     Shield,
@@ -13,6 +12,7 @@ import {
     Users as UsersIcon
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContextValues';
 
@@ -43,11 +43,15 @@ export default function UserManagement() {
             const response = await api.get('/tenants/users');
             setUsers(response.data);
             setError(null);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Failed to fetch users:', err);
-            setError(err.response?.data?.message || 'Failed to load users');
-            if (err.response?.status === 403) {
-                navigate('/chat');
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || 'Failed to load users');
+                if (err.response?.status === 403) {
+                    navigate('/chat');
+                }
+            } else {
+                setError('Failed to load users');
             }
         } finally {
             setLoading(false);
@@ -70,12 +74,15 @@ export default function UserManagement() {
                 username: newUsername,
                 password: newPassword
             });
-            setNewUsername('');
             setNewPassword('');
             setIsCreating(false);
             fetchUsers();
-        } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to create user');
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                alert(err.response?.data?.message || 'Failed to create user');
+            } else {
+                alert('Failed to create user');
+            }
         } finally {
             setActionLoading(null);
         }
@@ -91,7 +98,7 @@ export default function UserManagement() {
             setUsers(prev => prev.map(u =>
                 u.id === user.id ? { ...u, status: newStatus } : u
             ));
-        } catch (err: any) {
+        } catch {
             alert('Failed to update user status');
         } finally {
             setActionLoading(null);
@@ -105,7 +112,7 @@ export default function UserManagement() {
         try {
             await api.delete(`/tenants/users/${userId}`);
             setUsers(prev => prev.filter(u => u.id !== userId));
-        } catch (err: any) {
+        } catch {
             alert('Failed to delete user');
         } finally {
             setActionLoading(null);
@@ -131,7 +138,7 @@ export default function UserManagement() {
                 u.id === editingUser.id ? { ...u, username: editUsername } : u
             ));
             setEditingUser(null);
-        } catch (err: any) {
+        } catch {
             alert('Failed to update username');
         } finally {
             setActionLoading(null);
