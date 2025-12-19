@@ -4,14 +4,15 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Date;
 
@@ -19,10 +20,10 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${app.jwt.secret:defaultSecretKeyKeepItSafeAndLongEnoughForHS512Algorithm_MustBeAtLeast64BytesLongForSecurity}")
+    @Value("${app.jwt.secret}")
     private String jwtSecret;
 
-    @Value("${app.jwt.expiration-ms:86400000}")
+    @Value("${app.jwt.expiration-ms}")
     private long jwtExpirationDate;
 
     private Key key() {
@@ -35,26 +36,57 @@ public class JwtTokenProvider {
         Date expireDate = new Date(currentDate.getTime() + jwtExpirationDate);
 
         return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(new Date())
-                .setExpiration(expireDate)
-                .signWith(key(), SignatureAlgorithm.HS512)
+                .subject(username)
+                .issuedAt(new Date())
+                .expiration(expireDate)
+                .signWith(key())
+                .compact();
+    }
+
+    public String generateToken(Authentication authentication, String userId, String tenantId,
+            java.util.Set<String> roles) {
+        String username = authentication.getName();
+        Date currentDate = new Date();
+        Date expireDate = new Date(currentDate.getTime() + jwtExpirationDate);
+
+        return Jwts.builder()
+                .subject(username)
+                .claim("userId", userId)
+                .claim("tenantId", tenantId)
+                .claim("roles", roles)
+                .issuedAt(new Date())
+                .expiration(expireDate)
+                .signWith(key())
+                .compact();
+    }
+
+    public String generateRefreshToken(Authentication authentication) {
+        String username = authentication.getName();
+        Date currentDate = new Date();
+        // Refresh tokens typically last longer, e.g., 7 days
+        Date expireDate = new Date(currentDate.getTime() + (jwtExpirationDate * 24));
+
+        return Jwts.builder()
+                .subject(username)
+                .issuedAt(new Date())
+                .expiration(expireDate)
+                .signWith(key())
                 .compact();
     }
 
     public String getUsername(String token) {
         Claims claims = Jwts.parser()
-                .verifyWith((javax.crypto.SecretKey) key())
+                .verifyWith((SecretKey) key())
                 .build()
-                .parseSignedClaims(token) // parseClaimsJws is deprecated/renamed mostly
-                .getPayload(); // getBody() is deprecated
+                .parseSignedClaims(token)
+                .getPayload();
         return claims.getSubject();
     }
 
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
-                    .verifyWith((javax.crypto.SecretKey) key())
+                    .verifyWith((SecretKey) key())
                     .build()
                     .parseSignedClaims(token);
             return true;
@@ -66,7 +98,7 @@ public class JwtTokenProvider {
             log.error("Unsupported JWT token");
         } catch (IllegalArgumentException ex) {
             log.error("JWT claims string is empty");
-        } catch (io.jsonwebtoken.security.SignatureException ex) {
+        } catch (SignatureException ex) {
             log.error("Invalid JWT signature");
         } catch (Exception ex) {
             log.error("JWT validation error: {}", ex.getMessage());

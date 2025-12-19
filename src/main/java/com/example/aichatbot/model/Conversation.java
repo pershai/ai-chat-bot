@@ -1,5 +1,6 @@
 package com.example.aichatbot.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -13,6 +14,7 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,11 +28,11 @@ public class Conversation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Schema(description = "User Id", example = "1")
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private String userId;
 
     @Schema(description = "Title", example = "Conversation about the weather")
     @Column(nullable = false)
@@ -43,8 +45,8 @@ public class Conversation {
     private LocalDateTime updatedAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @com.fasterxml.jackson.annotation.JsonManagedReference
-    @lombok.ToString.Exclude
+    @JsonManagedReference
+    @ToString.Exclude
     private List<Message> messages;
 
     @PreUpdate

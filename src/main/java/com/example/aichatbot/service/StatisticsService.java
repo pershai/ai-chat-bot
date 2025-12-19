@@ -58,7 +58,7 @@ public class StatisticsService {
      * @param userId the user ID
      * @return user-specific statistics
      */
-    public UserStatisticsDto getUserStatistics(Integer userId) {
+    public UserStatisticsDto getUserStatistics(String userId) {
         long userConversations = conversationRepository.countByUserId(userId);
         long userMessages = messageRepository.countByConversationUserId(userId);
         long totalMessages = messageRepository.count(); // Keep for context

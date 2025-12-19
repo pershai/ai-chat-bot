@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import api from '../services/api';
 import { AuthContext } from './AuthContextValues';
 
@@ -9,15 +9,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
     const [userId, setUserId] = useState<string | null>(() => localStorage.getItem('userId'));
     const [username, setUsername] = useState<string | null>(() => localStorage.getItem('username'));
+    const [roles, setRoles] = useState<string[]>(() => {
+        const saved = localStorage.getItem('roles');
+        return saved ? JSON.parse(saved) : [];
+    });
 
-    const login = useCallback((token: string, refreshToken: string, id: string, user: string) => {
+    const login = useCallback((token: string, refreshToken: string, id: string, user: string, userRoles: string[]) => {
         localStorage.setItem('jwtToken', token);
         localStorage.setItem('refreshToken', refreshToken);
         localStorage.setItem('userId', id);
         localStorage.setItem('username', user);
+        localStorage.setItem('roles', JSON.stringify(userRoles));
         setIsAuthenticated(true);
         setUserId(id);
         setUsername(user);
+        setRoles(userRoles);
     }, []);
 
     const logout = useCallback(() => {
@@ -25,9 +31,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('userId');
         localStorage.removeItem('username');
+        localStorage.removeItem('roles');
         setIsAuthenticated(false);
         setUserId(null);
         setUsername(null);
+        setRoles([]);
         // Redirect to login page upon logout
         window.location.href = '/login';
     }, []);
@@ -53,7 +61,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, [logout]);
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, userId, username, login, logout }}>
+        <AuthContext.Provider value={{ isAuthenticated, userId, username, roles, login, logout }}>
             {children}
         </AuthContext.Provider>
     );

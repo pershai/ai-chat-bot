@@ -31,12 +31,13 @@ public class ChatService {
     @ValidateInput
     @ValidateOutput
     @CircuitBreaker(name = "gemini", fallbackMethod = "processChatFallback")
-    public String processChat(Integer userId, Integer conversationId, String message, BotConfigDto botConfig) {
+    public String processChat(String userId, Long conversationId, String message, BotConfigDto botConfig) {
         try {
             // LangGraph State Setup
             Map<String, Object> inputs = new HashMap<>();
             inputs.put("query", message);
             inputs.put("conversationId", String.valueOf(conversationId));
+            inputs.put("userId", userId);
 
             Optional<RagState> result = ragGraphRunner.invoke(inputs);
 
@@ -75,8 +76,8 @@ public class ChatService {
     }
 
     @SuppressWarnings("unused")
-    public String processChatFallback(Integer userId, Integer conversationId, String message, BotConfigDto botConfig,
-                                      Throwable t) {
+    public String processChatFallback(String userId, Long conversationId, String message, BotConfigDto botConfig,
+            Throwable t) {
         log.error("Circuit breaker open or exception fallback for user {}: {}", userId, t.getMessage());
         return "The AI service is currently unavailable. Please try again later.";
     }

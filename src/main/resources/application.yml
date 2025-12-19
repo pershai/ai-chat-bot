@@ -115,6 +115,9 @@ app:
     ttl:
       active-minutes: 120  # 2 hours for active/stuck jobs
       completed-minutes: 30  # 30 minutes for completed jobs
+  jwt:
+      expiration-ms: 86400000
+      secret: "defaultSecretKeyKeepItSafeAndLongEnoughForHS512Algorithm_MustBeAtLeast64BytesLongForSecurity"
 
 # LLM Guard
 llm:

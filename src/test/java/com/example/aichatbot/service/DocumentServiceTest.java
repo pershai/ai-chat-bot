@@ -73,8 +73,15 @@ class DocumentServiceTest {
         when(fileStorageService.load(anyString()))
                 .thenReturn(Files.newInputStream(testFile));
 
+        com.example.aichatbot.model.Document savedDoc = new com.example.aichatbot.model.Document();
+        savedDoc.setId(1L);
+        when(documentRepository.save(any(com.example.aichatbot.model.Document.class)))
+                .thenReturn(savedDoc);
+
+        when(chatModel.chat(anyString())).thenReturn("Test summary");
+
         // Act
-        documentService.ingestFiles(jobId, files, 1);
+        documentService.ingestFiles(jobId, files, "1");
 
         // Assert
         verify(jobService).updateProgress(jobId);
@@ -90,7 +97,7 @@ class DocumentServiceTest {
         String jobId = "test-job-empty";
 
         // Act
-        documentService.ingestFiles(jobId, files, 1);
+        documentService.ingestFiles(jobId, files, "1");
 
         // Assert
         verify(jobService).markCompleted(jobId);
@@ -111,7 +118,7 @@ class DocumentServiceTest {
                 .when(ingestor).ingest(any(Document.class));
 
         // Act
-        documentService.ingestFiles(jobId, files, 1);
+        documentService.ingestFiles(jobId, files, "1");
 
         // Assert
         verify(jobService).addError(eq(jobId), anyString());
@@ -129,8 +136,17 @@ class DocumentServiceTest {
         when(fileStorageService.load(anyString()))
                 .thenReturn(Files.newInputStream(testFile));
 
+        // Mock the document repository to return a document with ID when save is called
+        com.example.aichatbot.model.Document savedDoc = new com.example.aichatbot.model.Document();
+        savedDoc.setId(1L);
+        when(documentRepository.save(any(com.example.aichatbot.model.Document.class)))
+                .thenReturn(savedDoc);
+
+        // Mock the chat model to return a summary
+        when(chatModel.chat(anyString())).thenReturn("Test summary");
+
         // Act
-        documentService.ingestFiles(jobId, files, 1);
+        documentService.ingestFiles(jobId, files, "1");
 
         // Assert
         verify(fileStorageService).delete(testFile.toString());
@@ -150,7 +166,7 @@ class DocumentServiceTest {
                 .when(fileStorageService).load(nonExistentFile.toString());
 
         // Act
-        documentService.ingestFiles(jobId, files, 1);
+        documentService.ingestFiles(jobId, files, "1");
 
         // Assert
         verify(jobService).addError(eq(jobId), anyString());

@@ -27,8 +27,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Optional;
+
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -70,39 +71,58 @@ class ChatControllerTest {
 
         // Mock User Lookup
         User mockUser = new com.example.aichatbot.model.User();
-        mockUser.setId(1);
+        mockUser.setId("1");
         mockUser.setUsername("testuser");
         Mockito.when(userRepository.findByUsername("testuser")).thenReturn(java.util.Optional.of(mockUser));
+    }
+
+    private java.security.Principal getMockPrincipal() {
+        java.security.Principal principal = Mockito.mock(java.security.Principal.class);
+        Mockito.when(principal.getName()).thenReturn("testuser");
+        return principal;
     }
 
     @Test
     void chat_ExistingConversation_ReturnsResponse() throws Exception {
         // Arrange
-        ChatRequestDto request = new ChatRequestDto(1, 100, "Hello", null);
+        ChatRequestDto request = new ChatRequestDto(100L, "Hello", null);
+        String userId = "testuser";
 
-        when(chatService.processChat(anyInt(), anyInt(), anyString(), any())).thenReturn("AI Response");
+        User mockUser = new User();
+        mockUser.setId(userId);
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(mockUser));
+
+        Conversation existingConv = new Conversation();
+        existingConv.setId(100L);
+        existingConv.setUserId(userId);
+        when(conversationService.getConversation(100L)).thenReturn(Optional.of(existingConv));
+
+        when(chatService.processChat(eq(userId), eq(100L), anyString(), any())).thenReturn("AI Response");
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/chat")
+                        .principal(getMockPrincipal())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.response").value("AI Response"));
+                .andExpect(jsonPath("$.response").value("AI Response"))
+                .andExpect(jsonPath("$.conversationId").value(100));
     }
 
     @Test
     void chat_NewConversation_CreatesAndReturnsResponse() throws Exception {
         // Arrange
-        ChatRequestDto request = new ChatRequestDto(1, null, "New Chat", null);
+        ChatRequestDto request = new ChatRequestDto(null, "New Chat", null);
 
         Conversation mockConv = new Conversation();
-        mockConv.setId(200);
+        mockConv.setId(200L);
 
-        when(conversationService.createConversation(eq(1), anyString())).thenReturn(mockConv);
-        when(chatService.processChat(eq(1), eq(200), anyString(), any())).thenReturn("Welcome");
+        when(conversationService.createConversation(eq("1"), anyString())).thenReturn(mockConv);
+        when(chatService.processChat(eq("1"), eq(200L), anyString(), any())).thenReturn("Welcome");
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/chat")
+                        .principal(getMockPrincipal())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())

@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "AI Chat Bot API",
+    "name": "AI Chat Bot API v2",
     "description": "Comprehensive API collection for the AI Chat Bot application",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -38,9 +38,14 @@
               ]
             }
           }
-        },
+        }
+      ]
+    },
+    {
+      "name": "Tenants",
+      "item": [
         {
-          "name": "Register",
+          "name": "Register Tenant",
           "request": {
             "method": "POST",
             "header": [
@@ -51,7 +56,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"username\": \"newuser\",\n    \"password\": \"securepassword\"\n}",
+              "raw": "{\n    \"tenantName\": \"Acme Corp\",\n    \"adminUsername\": \"admin\",\n    \"adminPassword\": \"securepassword\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -59,13 +64,129 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/auth/register",
+              "raw": "{{base_url}}/tenants/register",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "auth",
+                "tenants",
                 "register"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Tenant User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"newtenantuser\",\n    \"password\": \"securepassword123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/tenants/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenants",
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Tenant Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenants/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenants",
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Tenant User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenants/users/{{managed_user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenants",
+                "users",
+                "{{managed_user_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Tenant User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"INACTIVE\",\n    \"roles\": [\"USER\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/tenants/users/{{managed_user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenants",
+                "users",
+                "{{managed_user_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Tenant User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenants/users/{{managed_user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenants",
+                "users",
+                "{{managed_user_id}}"
               ]
             }
           }
@@ -87,7 +208,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"conversationId\": 1,\n    \"message\": \"Hello, how can you help me today?\",\n    \"userId\": 1\n}",
+              "raw": "{\n    \"conversationId\": 1,\n    \"message\": \"Hello, how can you help me today?\",\n    \"userId\": \"{{user_id}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -117,7 +238,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"conversationId\": 1,\n    \"message\": \"Explain quantum computing.\",\n    \"userId\": 1,\n    \"botConfig\": {\n        \"personality\": \"professional\"\n    }\n}",
+              "raw": "{\n    \"conversationId\": 1,\n    \"message\": \"Explain quantum computing.\",\n    \"userId\": \"{{user_id}}\",\n    \"botConfig\": {\n        \"personality\": \"professional\"\n    }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -147,7 +268,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"conversationId\": 1,\n    \"message\": \"What is JDK?\",\n    \"userId\": 1,\n    \"botConfig\": {\n        \"personality\": \"concise\"\n    }\n}",
+              "raw": "{\n    \"conversationId\": 1,\n    \"message\": \"What is JDK?\",\n    \"userId\": \"{{user_id}}\",\n    \"botConfig\": {\n        \"personality\": \"concise\"\n    }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -177,7 +298,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"conversationId\": 1,\n    \"message\": \"How does RAG work?\",\n    \"userId\": 1,\n    \"botConfig\": {\n        \"personality\": \"detailed\"\n    }\n}",
+              "raw": "{\n    \"conversationId\": 1,\n    \"message\": \"How does RAG work?\",\n    \"userId\": \"{{user_id}}\",\n    \"botConfig\": {\n        \"personality\": \"detailed\"\n    }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -216,12 +337,13 @@
               ]
             },
             "url": {
-              "raw": "{{base_url}}/documents",
+              "raw": "{{base_url}}/documents/ingest",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "documents"
+                "documents",
+                "ingest"
               ]
             }
           }
@@ -237,18 +359,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/conversations?userId=1",
+              "raw": "{{base_url}}/conversations",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "conversations"
-              ],
-              "query": [
-                {
-                  "key": "userId",
-                  "value": "1"
-                }
               ]
             }
           }
@@ -299,19 +415,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/statistics?userId=1",
+              "raw": "{{base_url}}/statistics",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "statistics"
-              ],
-              "query": [
-                {
-                  "key": "userId",
-                  "value": "1",
-                  "description": "Optional: Get statistics for a specific user"
-                }
               ]
             }
           }
@@ -323,6 +432,16 @@
     {
       "key": "base_url",
       "value": "http://localhost:8080/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "replace-with-user-id-uuid",
+      "type": "string"
+    },
+    {
+      "key": "managed_user_id",
+      "value": "replace-with-target-user-id",
       "type": "string"
     }
   ],

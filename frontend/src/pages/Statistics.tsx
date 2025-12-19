@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Activity, BarChart3, FileText, MessageSquare, TrendingUp } from 'lucide-react';
+import {useEffect, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {Activity, BarChart3, FileText, MessageSquare, TrendingUp} from 'lucide-react';
 import api from '../services/api';
 
 interface Stats {
@@ -34,9 +34,7 @@ export default function Statistics() {
 
     const fetchStatistics = async () => {
         try {
-            const userId = localStorage.getItem('userId');
-            const url = userId ? `/statistics?userId=${userId}` : '/statistics';
-            const response = await api.get(url);
+            const response = await api.get('/statistics');
             setStats(response.data);
             setError(null);
         } catch {

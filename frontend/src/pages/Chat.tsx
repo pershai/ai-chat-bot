@@ -1,5 +1,19 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { BarChart3, Bot, Check, Copy, FileText, LogOut, Menu, MessageSquare, Plus, Send, Trash2, User, X } from 'lucide-react';
+import {
+    BarChart3,
+    Bot,
+    Check,
+    Copy,
+    FileText,
+    LogOut,
+    Menu,
+    MessageSquare,
+    Plus,
+    Send,
+    Trash2,
+    User,
+    X
+} from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -7,6 +21,8 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import axios from 'axios';
 import api from '../services/api';
 import { twMerge } from 'tailwind-merge';
+import { useAuth } from '../context/AuthContextValues';
+import { Users as UsersIcon } from 'lucide-react';
 
 interface Message {
     role: 'user' | 'assistant';
@@ -83,6 +99,8 @@ export default function Chat() {
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
+    const { roles } = useAuth();
+    const isAdmin = roles.includes('ADMIN');
 
     const fetchConversations = useCallback(async () => {
         try {
@@ -92,7 +110,7 @@ export default function Chat() {
                 setConversations([]);
                 return;
             }
-            const response = await api.get(`/conversations?userId=${userId}`);
+            const response = await api.get('/conversations');
 
             if (Array.isArray(response.data)) {
                 setConversations(response.data);
@@ -306,6 +324,15 @@ export default function Chat() {
                             <FileText className="w-5 h-5" />
                             <span>Upload Documents</span>
                         </Link>
+                        {isAdmin && (
+                            <Link
+                                to="/users"
+                                className="flex items-center space-x-3 text-gray-400 hover:text-white w-full px-2 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                            >
+                                <UsersIcon className="w-5 h-5" />
+                                <span>Manage Users</span>
+                            </Link>
+                        )}
                         <button
                             onClick={handleLogout}
                             className="flex items-center space-x-3 text-gray-400 hover:text-white w-full px-2 py-2 rounded-lg hover:bg-gray-800 transition-colors"

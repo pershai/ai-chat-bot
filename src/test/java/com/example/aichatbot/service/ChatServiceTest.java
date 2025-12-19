@@ -46,8 +46,8 @@ class ChatServiceTest {
     @Test
     void processChat_Success() {
         // Arrange
-        Integer userId = 1;
-        Integer conversationId = 100;
+        String userId = "1";
+        Long conversationId = 100L;
         String message = "Hello AI";
         String expectedResponse = "Hello User";
 
@@ -70,8 +70,8 @@ class ChatServiceTest {
     @Test
     void processChat_EmptyGraphResponse_ReturnsError() {
         // Arrange
-        Integer userId = 1;
-        Integer conversationId = 100;
+        String userId = "1";
+        Long conversationId = 100L;
         String message = "Hello";
 
         when(ragGraphRunner.invoke(anyMap())).thenReturn(Optional.empty());
@@ -85,8 +85,8 @@ class ChatServiceTest {
     @Test
     void processChat_GraphError_ThrowsException() {
         // Arrange
-        Integer userId = 1;
-        Integer conversationId = 100;
+        String userId = "1";
+        Long conversationId = 100L;
         String message = "Error me";
 
         when(ragGraphRunner.invoke(anyMap())).thenThrow(new RuntimeException("Graph Down"));
@@ -100,8 +100,8 @@ class ChatServiceTest {
     @Test
     void processChat_NullResponseInState_UsesFallback() {
         // Arrange
-        Integer userId = 1;
-        Integer conversationId = 100;
+        String userId = "1";
+        Long conversationId = 100L;
         String message = "Hello";
 
         Map<String, Object> stateData = new HashMap<>();

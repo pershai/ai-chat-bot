@@ -2,6 +2,8 @@ package com.example.aichatbot.controller;
 
 import com.example.aichatbot.dto.DocumentDto;
 import com.example.aichatbot.model.IngestionJob;
+import com.example.aichatbot.model.User;
+import com.example.aichatbot.repository.UserRepository;
 import com.example.aichatbot.security.JwtAuthenticationFilter;
 import com.example.aichatbot.service.DocumentService;
 import com.example.aichatbot.service.JobService;
@@ -17,8 +19,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -48,6 +52,9 @@ class DocumentControllerTest {
         @MockitoBean
         private DocumentService documentService;
 
+        @MockitoBean
+        private UserRepository userRepository;
+
         @Test
         void ingestDocs_ValidFiles_ReturnsAccepted() throws Exception {
                 // Arrange
@@ -69,10 +76,16 @@ class DocumentControllerTest {
                                 "application/pdf",
                                 "PDF content".getBytes());
 
+                User mockUser = new User();
+                mockUser.setId("user-123");
+                mockUser.setUsername("testuser");
+                when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(mockUser));
+
                 // Act & Assert
                 mockMvc.perform(multipart("/api/v1/documents/ingest")
                                 .file(file1)
-                                .file(file2))
+                                .file(file2)
+                                .principal(() -> "testuser"))
                                 .andExpect(status().isAccepted())
                                 .andExpect(jsonPath("$.message").value("Processing queued"))
                                 .andExpect(jsonPath("$.jobId").value("test-job-123"));
@@ -81,7 +94,8 @@ class DocumentControllerTest {
         @Test
         void ingestDocs_EmptyFileList_ReturnsBadRequest() throws Exception {
                 // Act & Assert
-                mockMvc.perform(multipart("/api/v1/documents/ingest"))
+                mockMvc.perform(multipart("/api/v1/documents/ingest")
+                                .principal(() -> "testuser"))
                                 .andExpect(status().isBadRequest());
         }
 
@@ -129,9 +143,15 @@ class DocumentControllerTest {
                                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                                 "Document content".getBytes());
 
+                User mockUser = new User();
+                mockUser.setId("user-123");
+                mockUser.setUsername("testuser");
+                when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(mockUser));
+
                 // Act & Assert
                 mockMvc.perform(multipart("/api/v1/documents/ingest")
-                                .file(file))
+                                .file(file)
+                                .principal(() -> "testuser"))
                                 .andExpect(status().isAccepted())
                                 .andExpect(jsonPath("$.jobId").value("single-file-job"));
         }
@@ -140,15 +160,21 @@ class DocumentControllerTest {
         void getDocuments_ReturnsList() throws Exception {
                 // Arrange
                 DocumentDto doc1 = DocumentDto.builder()
-                                .id(1)
+                                .id(1L)
                                 .filename("test.pdf")
                                 .fileType("PDF")
                                 .build();
 
-                when(documentService.getDocuments(anyInt())).thenReturn(List.of(doc1));
+                when(documentService.getDocuments(anyString())).thenReturn(List.of(doc1));
+
+                User mockUser = new User();
+                mockUser.setId("user-123");
+                mockUser.setUsername("testuser");
+                when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(mockUser));
 
                 // Act & Assert
-                mockMvc.perform(get("/api/v1/documents"))
+                mockMvc.perform(get("/api/v1/documents")
+                                .principal(() -> "testuser"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$[0].filename").value("test.pdf"))
                                 .andExpect(jsonPath("$[0].fileType").value("PDF"));
