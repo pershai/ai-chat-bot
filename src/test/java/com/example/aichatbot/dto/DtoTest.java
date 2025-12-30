@@ -24,11 +24,10 @@ class DtoTest {
         BotConfigDto config = new BotConfigDto("friendly");
 
         // Act
-        ChatRequestDto request = new ChatRequestDto(10, 100, "Hello AI", config);
+        ChatRequestDto request = new ChatRequestDto(100L, "Hello AI", config);
 
         // Assert
-        assertEquals(10, request.userId());
-        assertEquals(100, request.conversationId());
+        assertEquals(100L, request.conversationId());
         assertEquals("Hello AI", request.message());
         assertNotNull(request.botConfig());
         assertEquals("friendly", request.botConfig().personality());

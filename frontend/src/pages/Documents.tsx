@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { AlertCircle, Calendar, CheckCircle, File as FileIcon, FileText, Loader, Upload, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import {useCallback, useEffect, useState} from 'react';
+import {useDropzone} from 'react-dropzone';
+import {AlertCircle, Calendar, CheckCircle, File as FileIcon, FileText, Loader, Upload, X} from 'lucide-react';
+import {useNavigate} from 'react-router-dom';
 import axios from 'axios';
 import api from '../services/api';
 
@@ -41,10 +41,7 @@ export default function Documents() {
 
     const fetchDocuments = useCallback(async () => {
         try {
-            const userId = localStorage.getItem('userId');
-            const response = await api.get('/documents', {
-                params: { userId: userId || 1 }
-            });
+            const response = await api.get('/documents');
             setDocuments(response.data);
         } catch (err) {
             console.error('Failed to fetch documents', err);
@@ -88,12 +85,6 @@ export default function Documents() {
         try {
             const formData = new FormData();
             files.forEach(({ file }) => formData.append('files', file));
-
-            // Add userId from localStorage
-            const userId = localStorage.getItem('userId');
-            if (userId) {
-                formData.append('userId', userId);
-            }
 
             const response = await api.post('/documents/ingest', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }

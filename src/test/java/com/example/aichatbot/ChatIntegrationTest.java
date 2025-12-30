@@ -92,7 +92,7 @@ public class ChatIntegrationTest extends AbstractIntegrationTest {
                 HttpHeaders headers = new HttpHeaders();
                 headers.setBearerAuth(token);
 
-                ChatRequestDto chatRequestDto = new ChatRequestDto(1, 1, "Hello Integration Test", null);
+                ChatRequestDto chatRequestDto = new ChatRequestDto(1L, "Hello Integration Test", null);
 
                 HttpEntity<ChatRequestDto> requestEntity = new HttpEntity<>(chatRequestDto, headers);
 

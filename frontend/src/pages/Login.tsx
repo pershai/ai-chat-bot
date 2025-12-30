@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Lock, MessageSquare, User } from 'lucide-react';
+import React, {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {ArrowRight, Lock, MessageSquare, User} from 'lucide-react';
 import axios from 'axios';
 import api from '../services/api';
+import {useAuth} from '../context/AuthContextValues';
 
 export default function Login() {
     const [isLogin, setIsLogin] = useState(true);
@@ -11,6 +12,7 @@ export default function Login() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,24 +24,16 @@ export default function Login() {
             const response = await api.post(endpoint, { username, password });
 
             if (isLogin) {
-                // Login returns AuthResponseDto with token, userId, and username
-                const { token, userId, username: user } = response.data;
+                const { token, refreshToken, userId, username: user, roles } = response.data;
                 if (token) {
-                    localStorage.setItem('jwtToken', token);
-                    localStorage.setItem('userId', userId.toString());
-                    localStorage.setItem('username', user);
+                    login(token, refreshToken || '', userId.toString(), user, roles);
                 }
             } else {
-                // Register returns User object with id
                 if (response.data.id) {
-                    localStorage.setItem('userId', response.data.id.toString());
-                    localStorage.setItem('username', username);
-                    // After registration, automatically login
                     const loginResponse = await api.post('/auth/login', { username, password });
-                    const { token, userId } = loginResponse.data;
+                    const { token, refreshToken, userId, username: user, roles } = loginResponse.data;
                     if (token) {
-                        localStorage.setItem('jwtToken', token);
-                        localStorage.setItem('userId', userId.toString());
+                        login(token, refreshToken || '', userId.toString(), user, roles);
                     }
                 }
             }

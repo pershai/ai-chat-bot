@@ -2,13 +2,18 @@ package com.example.aichatbot.service;
 
 import com.example.aichatbot.dto.DocumentDto;
 import com.example.aichatbot.repository.DocumentRepository;
+import com.example.aichatbot.service.storage.FileStorageService;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
+import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -25,9 +30,10 @@ public class DocumentService {
     private final EmbeddingStoreIngestor ingestor;
     private final JobService jobService;
     private final DocumentRepository documentRepository;
-    private final com.example.aichatbot.service.storage.FileStorageService fileStorageService;
+    private final EmbeddingStore<TextSegment> embeddingStore;
+    private final FileStorageService fileStorageService;
 
-    public void ingestFiles(String jobId, List<Path> filePaths, Integer userId) {
+    public void ingestFiles(String jobId, List<Path> filePaths, String userId) {
         log.info("Job {}: Starting ingestion for user {}...", jobId, userId);
 
         for (Path path : filePaths) {
@@ -47,11 +53,26 @@ public class DocumentService {
         log.info("Job {}: Completed.", jobId);
     }
 
-    private void processSingleFile(String filename, Integer userId) throws Exception {
+    @Transactional
+    public void deleteUserContent(String userId) {
+        log.info("Deleting all content for user: {}", userId);
+
+        try {
+            embeddingStore.removeAll(MetadataFilterBuilder.metadataKey("userId").isEqualTo(userId));
+            log.info("Removed embeddings for user: {}", userId);
+        } catch (Exception e) {
+            log.error("Failed to remove embeddings for user: {}", userId, e);
+        }
+
+        documentRepository.deleteByUserId(userId);
+    }
+
+    private void processSingleFile(String filename, String userId) throws Exception {
         try (InputStream inputStream = fileStorageService.load(filename)) {
             ApacheTikaDocumentParser parser = new ApacheTikaDocumentParser();
             Document document = parser.parse(inputStream);
             document.metadata().put("filename", fileStorageService.resolve(filename).getFileName().toString());
+            document.metadata().put("userId", userId);
             ingestor.ingest(document);
 
             com.example.aichatbot.model.Document dbDocument = new com.example.aichatbot.model.Document();
@@ -67,12 +88,15 @@ public class DocumentService {
                     String prompt = "Summarize the following text in 50 words or less:\n\n" + limitedText;
                     String summary = chatModel.chat(prompt);
                     dbDocument.setSummary(summary);
+                    log.debug("Generated summary for document {}: {}", filename, summary);
                 }
             } catch (Exception e) {
-                log.warn("Failed to generate summary for document {}", filename, e);
+                log.warn("Failed to generate summary for document {}: {}", filename, e.getMessage());
             }
-            documentRepository.save(dbDocument);
-            log.info("Saved document {} for user {}", filename, userId);
+
+            com.example.aichatbot.model.Document saved = documentRepository.save(dbDocument);
+            log.info("Successfully persisted document to DB. ID: {}, Filename: {}, UserID: {}",
+                    saved.getId(), saved.getFilename(), saved.getUserId());
         }
     }
 
@@ -81,7 +105,7 @@ public class DocumentService {
         return lastDot > 0 ? filename.substring(lastDot + 1).toUpperCase() : "UNKNOWN";
     }
 
-    public List<DocumentDto> getDocuments(Integer userId) {
+    public List<DocumentDto> getDocuments(String userId) {
         return documentRepository.findByUserId(userId).stream()
                 .map(doc -> DocumentDto.builder()
                         .id(doc.getId())

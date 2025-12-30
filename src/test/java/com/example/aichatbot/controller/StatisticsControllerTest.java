@@ -1,17 +1,24 @@
 package com.example.aichatbot.controller;
 
+import com.example.aichatbot.config.TestSecurityConfig;
 import com.example.aichatbot.dto.StatisticsDto;
 import com.example.aichatbot.dto.UserStatisticsDto;
+import com.example.aichatbot.model.User;
+import com.example.aichatbot.repository.UserRepository;
 import com.example.aichatbot.security.JwtAuthenticationFilter;
 import com.example.aichatbot.service.StatisticsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.security.Principal;
+import java.util.Optional;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -28,6 +35,9 @@ class StatisticsControllerTest {
 
     @MockitoBean
     private StatisticsService statisticsService;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -53,14 +63,21 @@ class StatisticsControllerTest {
     @Test
     void getUserStatistics_ReturnsUserStats() throws Exception {
         // Arrange
-        Integer userId = 123;
-        UserStatisticsDto mockUserStats = new UserStatisticsDto(5, 50, 1000, 10, 1, 250);
+        String userId = "123";
+        Principal mockPrincipal = Mockito.mock(Principal.class);
+        when(mockPrincipal.getName()).thenReturn("testuser");
 
+        User mockUser = new User();
+        mockUser.setId(userId);
+        mockUser.setUsername("testuser");
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(mockUser));
+
+        UserStatisticsDto mockUserStats = new UserStatisticsDto(5, 50, 1000, 10, 1, 250);
         when(statisticsService.getUserStatistics(userId)).thenReturn(mockUserStats);
 
         // Act & Assert
         mockMvc.perform(get("/api/v1/statistics")
-                        .param("userId", userId.toString()))
+                        .principal(mockPrincipal))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.myConversations").value(5))
                 .andExpect(jsonPath("$.myMessages").value(50))

@@ -11,6 +11,6 @@ import java.util.List;
 @AllArgsConstructor
 public class IngestionEvent {
     private String jobId;
-    private Integer userId;
+    private String userId;
     private List<String> filePaths;
 }

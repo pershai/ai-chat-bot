@@ -1,8 +1,10 @@
 package com.example.aichatbot.controller;
 
+import com.example.aichatbot.config.TestSecurityConfig;
 import com.example.aichatbot.dto.LoginRequestDto;
 import com.example.aichatbot.model.User;
 import com.example.aichatbot.repository.UserRepository;
+import com.example.aichatbot.security.JwtAuthenticationFilter;
 import com.example.aichatbot.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -50,7 +55,7 @@ class AuthControllerTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @MockitoBean
-    private com.example.aichatbot.security.JwtAuthenticationFilter jwtAuthenticationFilter;
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -62,22 +67,18 @@ class AuthControllerTest {
 
         // Create a mock user
         User mockUser = new User();
-        mockUser.setId(1);
+        mockUser.setId("1");
         mockUser.setUsername("testuser");
         mockUser.setHashedPassword("hashed-password");
 
-        // Mock authentication
-        Authentication mockAuth =
-                new UsernamePasswordAuthenticationToken("testuser", "password123");
+        Authentication mockAuth = new UsernamePasswordAuthenticationToken("testuser", "password123");
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(mockAuth);
 
-        // Mock user repository to return the test user
         when(userRepository.findByUsername("testuser"))
                 .thenReturn(Optional.of(mockUser));
 
-        // Mock token generation
-        when(jwtTokenProvider.generateToken(mockAuth))
+        when(jwtTokenProvider.generateToken(eq(mockAuth), eq("1"), isNull(), anySet()))
                 .thenReturn("mock-jwt-token");
 
         // Act & Assert
@@ -86,7 +87,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("mock-jwt-token"))
-                .andExpect(jsonPath("$.userId").value(1))  // Changed from $.id to $.userId
+                .andExpect(jsonPath("$.userId").value("1")) // Changed from $.id to $.userId
                 .andExpect(jsonPath("$.username").value("testuser"));
     }
 
@@ -96,7 +97,7 @@ class AuthControllerTest {
         LoginRequestDto request = new LoginRequestDto("testuser", "password123");
 
         User savedUser = new User();
-        savedUser.setId(1);
+        savedUser.setId("1");
         savedUser.setUsername("newuser");
         savedUser.setHashedPassword("hashed-password");
 
@@ -109,7 +110,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.id").value("1"))
                 .andExpect(jsonPath("$.username").value("newuser"));
     }
 
@@ -119,7 +120,7 @@ class AuthControllerTest {
         LoginRequestDto request = new LoginRequestDto("existinguser", "password123");
 
         User existingUser = new User();
-        existingUser.setId(1);
+        existingUser.setId("1");
         existingUser.setUsername("existinguser");
         existingUser.setHashedPassword("hashed-password");
 

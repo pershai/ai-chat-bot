@@ -1,5 +1,5 @@
+import type {AxiosRequestConfig} from 'axios';
 import axios from 'axios';
-import type { AxiosRequestConfig } from 'axios';
 
 const api = axios.create({
     baseURL: '/api/v1',
@@ -54,7 +54,7 @@ api.interceptors.response.use(
                 })
                     .then(token => {
                         originalRequest.headers.Authorization = 'Bearer ' + token;
-                        return axios(originalRequest);
+                        return api(originalRequest);
                     })
                     .catch(err => {
                         return Promise.reject(err);
@@ -67,7 +67,7 @@ api.interceptors.response.use(
 
             if (refreshToken) {
                 try {
-                    // Call your refresh token endpoint
+                    // Call refresh token endpoint - use global axios to avoid interceptor loop
                     const response = await axios.post('/api/v1/auth/refresh-token', { refreshToken });
                     const { token: newAccessToken, refreshToken: newRefreshToken } = response.data;
 
@@ -81,7 +81,13 @@ api.interceptors.response.use(
 
                     // Retry the original failed request with the new token
                     originalRequest.headers.Authorization = 'Bearer ' + newAccessToken;
-                    return axios(originalRequest);
+
+                    // If the URL already starts with baseURL, strip it to avoid doubling when calling api()
+                    if (originalRequest.url && originalRequest.baseURL && originalRequest.url.startsWith(originalRequest.baseURL)) {
+                        originalRequest.url = originalRequest.url.substring(originalRequest.baseURL.length);
+                    }
+
+                    return api(originalRequest);
                 } catch (refreshError) {
                     // Refresh failed, clear tokens and redirect to login
                     localStorage.removeItem('jwtToken');
