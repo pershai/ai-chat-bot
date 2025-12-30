@@ -1,7 +1,10 @@
 package com.example.aichatbot.controller;
 
+import com.example.aichatbot.dto.LoginRequestDto;
 import com.example.aichatbot.dto.TenantRegistrationDto;
+import com.example.aichatbot.dto.UserUpdateDto;
 import com.example.aichatbot.enums.Role;
+import com.example.aichatbot.exception.UserNotFoundException;
 import com.example.aichatbot.model.Tenant;
 import com.example.aichatbot.model.User;
 import com.example.aichatbot.repository.TenantRepository;
@@ -9,16 +12,20 @@ import com.example.aichatbot.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-import com.example.aichatbot.dto.LoginRequestDto;
-import com.example.aichatbot.dto.UserUpdateDto;
-import com.example.aichatbot.exception.UserNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Set;
 
 @Slf4j

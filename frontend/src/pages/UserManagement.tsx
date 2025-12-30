@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
     ChevronLeft,
     LogOut,
@@ -11,10 +11,10 @@ import {
     UserPlus,
     Users as UsersIcon
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import axios from 'axios';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContextValues';
+import {useAuth} from '../context/AuthContextValues';
 
 interface TenantUser {
     id: string;

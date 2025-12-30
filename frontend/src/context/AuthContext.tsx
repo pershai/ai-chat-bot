@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react';
-import React, { useCallback, useEffect, useState } from 'react';
+import type {ReactNode} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import api from '../services/api';
-import { AuthContext } from './AuthContextValues';
+import {AuthContext} from './AuthContextValues';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {

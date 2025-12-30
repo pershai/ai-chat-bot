@@ -1,6 +1,7 @@
 package com.example.aichatbot.service.graph;
 
 import com.example.aichatbot.service.Assistant;
+import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.output.TokenUsage;
@@ -67,7 +68,7 @@ public class RagGraph {
             log.info("Retrieving documents for query: {} and user: {}", state.getQuery(), state.getUserId());
 
             // Embed the query
-            dev.langchain4j.data.embedding.Embedding queryEmbedding = embeddingModel.embed(state.getQuery()).content();
+            Embedding queryEmbedding = embeddingModel.embed(state.getQuery()).content();
 
             // Search with filter
             EmbeddingSearchRequest request = EmbeddingSearchRequest

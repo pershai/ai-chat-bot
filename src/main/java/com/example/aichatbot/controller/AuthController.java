@@ -2,6 +2,7 @@ package com.example.aichatbot.controller;
 
 import com.example.aichatbot.dto.AuthResponseDto;
 import com.example.aichatbot.dto.LoginRequestDto;
+import com.example.aichatbot.enums.UserStatus;
 import com.example.aichatbot.exception.UserNotFoundException;
 import com.example.aichatbot.model.User;
 import com.example.aichatbot.repository.UserRepository;
@@ -11,14 +12,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.example.aichatbot.enums.UserStatus;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Set;
 import java.util.stream.Collectors;

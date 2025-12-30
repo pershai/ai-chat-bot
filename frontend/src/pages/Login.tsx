@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Lock, MessageSquare, User } from 'lucide-react';
+import React, {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {ArrowRight, Lock, MessageSquare, User} from 'lucide-react';
 import axios from 'axios';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContextValues';
+import {useAuth} from '../context/AuthContextValues';
 
 export default function Login() {
     const [isLogin, setIsLogin] = useState(true);

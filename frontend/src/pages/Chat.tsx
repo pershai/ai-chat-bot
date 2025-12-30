@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
     BarChart3,
     Bot,
@@ -12,17 +12,17 @@ import {
     Send,
     Trash2,
     User,
+    Users as UsersIcon,
     X
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter';
+import {vscDarkPlus} from 'react-syntax-highlighter/dist/esm/styles/prism';
 import axios from 'axios';
 import api from '../services/api';
-import { twMerge } from 'tailwind-merge';
-import { useAuth } from '../context/AuthContextValues';
-import { Users as UsersIcon } from 'lucide-react';
+import {twMerge} from 'tailwind-merge';
+import {useAuth} from '../context/AuthContextValues';
 
 interface Message {
     role: 'user' | 'assistant';

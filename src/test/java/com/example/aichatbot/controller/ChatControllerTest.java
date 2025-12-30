@@ -1,5 +1,6 @@
 package com.example.aichatbot.controller;
 
+import com.example.aichatbot.config.TestSecurityConfig;
 import com.example.aichatbot.dto.ChatRequestDto;
 import com.example.aichatbot.model.Conversation;
 import com.example.aichatbot.model.User;

@@ -57,7 +57,7 @@ langchain4j:
   gemini:
     chat-model:
       api-key: ${GOOGLE_API_KEY}
-      model-name: gemini-2.5-flash-lite
+      model-name: ${LLM_MODEL_NAME}
       temperature: 0.7
       timeout: 60
       max-memory-size: 10
@@ -104,7 +104,7 @@ logging:
         web: INFO
     dev:
       langchain4j: DEBUG
-#Errors
+
 app:
   error:
     include-stacktrace: never  # or "always" or "on-param"
@@ -118,6 +118,10 @@ app:
   jwt:
       expiration-ms: 86400000
       secret: "defaultSecretKeyKeepItSafeAndLongEnoughForHS512Algorithm_MustBeAtLeast64BytesLongForSecurity"
+  file-storage:
+    allowed-extensions: pdf,doc,docx
+    max-filename-length: 255
+    storage-path: ${FILE_STORAGE_PATH}
 
 # LLM Guard
 llm:

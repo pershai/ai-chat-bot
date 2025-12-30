@@ -1,11 +1,11 @@
-import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
+import {BrowserRouter as Router, Navigate, Route, Routes} from 'react-router-dom';
 import Login from './pages/Login';
 import Chat from './pages/Chat';
 import Documents from './pages/Documents';
 import Statistics from './pages/Statistics';
 import UserManagement from './pages/UserManagement';
 
-import { AuthProvider } from './context/AuthContext';
+import {AuthProvider} from './context/AuthContext';
 
 function App() {
   return (
