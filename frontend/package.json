@@ -13,7 +13,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "axios": "^1.13.2",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.556.0",
+    "lucide-react": "^0.560.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-dropzone": "^14.3.8",
