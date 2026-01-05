@@ -1,0 +1,15 @@
+logging:
+  level:
+    root: INFO
+    com.example.aichatbot: INFO
+    org.springframework: WARN
+    dev.langchain4j: INFO
+
+spring:
+  jpa:
+    show-sql: false
+  
+  # Ensure we don't expose too much info in prod
+  devtools:
+    restart:
+      enabled: false

@@ -5,10 +5,13 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import com.example.aichatbot.config.FileStorageConfig;
+import org.apache.tika.Tika;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -28,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,6 +41,9 @@ class LocalFileStorageServiceTest {
 
     @Mock
     private FileStorageConfig fileStorageConfig;
+
+    @Mock
+    private Tika tika;
 
     @Mock
     private Appender<ILoggingEvent> mockAppender;
@@ -50,7 +57,7 @@ class LocalFileStorageServiceTest {
     Path tempDir;
 
     private void setupService() {
-        service = new LocalFileStorageService(fileStorageConfig);
+        service = new LocalFileStorageService(fileStorageConfig, tika);
     }
 
     private void setupLogging() {
@@ -85,6 +92,7 @@ class LocalFileStorageServiceTest {
         String filename = "test.txt";
         String content = "Hello, World!";
         InputStream input = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+        when(tika.detect(any(InputStream.class))).thenReturn("text/plain");
 
         // Act
         String result = service.store(input, filename);
@@ -214,28 +222,42 @@ class LocalFileStorageServiceTest {
         Files.deleteIfExists(outsideFile);
     }
 
-    @Test
-    void store_WithValidExtensions_StoresSuccessfully() {
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "test.pdf", "test.doc", "test.docx", "test.txt", "test.md",
+            "test.csv", "test.json", "test.xls", "test.xlsx", "test.ppt", "test.pptx"
+    })
+    void store_WithValidExtensions_StoresSuccessfully(String filename) throws Exception {
         // Arrange
         setupWithAllowedExtensions("pdf", "doc", "docx", "txt", "md", "csv", "json", "xls", "xlsx", "ppt", "pptx");
 
-        String[] validFilenames = {
-                "test.pdf", "test.doc", "test.docx", "test.txt", "test.md",
-                "test.csv", "test.json", "test.xls", "test.xlsx", "test.ppt", "test.pptx"
+        InputStream input = new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8));
+        String extension = filename.substring(filename.lastIndexOf(".") + 1);
+        String mimeType = getMimeTypeForExtension(extension);
+
+        when(tika.detect(any(InputStream.class))).thenReturn(mimeType);
+
+        // Act & Assert
+        assertDoesNotThrow(() -> {
+            String result = service.store(input, filename);
+            assertNotNull(result);
+            assertTrue(Files.exists(Path.of(result)));
+            Files.deleteIfExists(Path.of(result));
+        });
+    }
+
+    private String getMimeTypeForExtension(String extension) {
+        return switch (extension) {
+            case "pdf" -> "application/pdf";
+            case "doc" -> "application/msword";
+            case "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            case "txt", "md", "csv", "json" -> "text/plain";
+            case "xls" -> "application/vnd.ms-excel";
+            case "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            case "ppt" -> "application/vnd.ms-powerpoint";
+            case "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+            default -> "application/octet-stream";
         };
-
-        for (String filename : validFilenames) {
-            // Arrange
-            InputStream input = new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8));
-
-            // Act & Assert
-            assertDoesNotThrow(() -> {
-                String result = service.store(input, filename);
-                assertNotNull(result);
-                assertTrue(Files.exists(Path.of(result)));
-                Files.deleteIfExists(Path.of(result));
-            }, "Failed for file: " + filename);
-        }
     }
 
     @Test

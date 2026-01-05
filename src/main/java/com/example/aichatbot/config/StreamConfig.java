@@ -32,6 +32,7 @@ import java.util.UUID;
 public class StreamConfig {
     private String key;
     private String group;
+    private int maxRetries = 3;
     private ConsumerConfig consumer;
 
     @Data
@@ -45,7 +46,7 @@ public class StreamConfig {
 
     @Bean
     public Subscription subscription(RedisConnectionFactory redisConnectionFactory,
-                                     IngestionConsumer ingestionConsumer) {
+            IngestionConsumer ingestionConsumer) {
         createGroupIfNotExists(redisConnectionFactory);
 
         var options = StreamMessageListenerContainer.StreamMessageListenerContainerOptions
@@ -64,8 +65,7 @@ public class StreamConfig {
         var subscription = listenerContainer.receive(
                 Consumer.from(group, consumerId),
                 StreamOffset.create(key, ReadOffset.lastConsumed()),
-                ingestionConsumer
-        );
+                ingestionConsumer);
 
         if (consumer.isAutoStartup()) {
             listenerContainer.start();

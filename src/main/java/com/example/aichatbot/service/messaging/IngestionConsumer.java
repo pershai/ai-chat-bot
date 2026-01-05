@@ -27,24 +27,22 @@ public class IngestionConsumer implements StreamListener<String, ObjectRecord<St
     private final StreamDLQService dlqService;
     private final StreamConfig streamConfig;
 
-    // TODO: Ideally configurable
-    private static final int MAX_RETRIES = 3;
-
     @Override
     public void onMessage(ObjectRecord<String, String> message) {
 
         int attempts = 0;
+        int maxRetries = streamConfig.getMaxRetries(); // Assuming added to StreamConfig, or use default if not present
         boolean success = false;
 
-        while (attempts < MAX_RETRIES && !success) {
+        while (attempts < maxRetries && !success) {
             try {
                 processMessage(message);
                 success = true;
                 redisTemplate.opsForStream().acknowledge(streamConfig.getGroup(), message);
             } catch (Exception e) {
                 attempts++;
-                log.warn("Attempt {}/{} failed for message {}", attempts, MAX_RETRIES, message.getId(), e);
-                if (attempts >= MAX_RETRIES) {
+                log.warn("Attempt {}/{} failed for message {}", attempts, maxRetries, message.getId(), e);
+                if (attempts >= maxRetries) {
                     log.error("Max retries reached for message {}. Moving to DLQ.", message.getId());
                     dlqService.optimizeAndMoveToDLQ(message, streamConfig.getKey(),
                             streamConfig.getGroup());

@@ -1,0 +1,11 @@
+logging:
+  level:
+    root: INFO
+    com.example.aichatbot: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    dev.langchain4j: DEBUG
+
+spring:
+  jpa:
+    show-sql: true

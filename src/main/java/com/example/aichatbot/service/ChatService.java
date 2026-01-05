@@ -7,6 +7,7 @@ import com.example.aichatbot.security.ValidateInput;
 import com.example.aichatbot.security.ValidateOutput;
 import com.example.aichatbot.service.graph.RagState;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bsc.langgraph4j.CompiledGraph;
@@ -31,6 +32,7 @@ public class ChatService {
     @ValidateInput
     @ValidateOutput
     @CircuitBreaker(name = "gemini", fallbackMethod = "processChatFallback")
+    @RateLimiter(name = "chat")
     public String processChat(String userId, Long conversationId, String message, BotConfigDto botConfig) {
         try {
             // LangGraph State Setup
