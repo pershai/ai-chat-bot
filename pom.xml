@@ -24,7 +24,7 @@
         <langchain4j-spring-boot-starter.version>1.9.1-beta17</langchain4j-spring-boot-starter.version>
         <langgraph4j.version>1.7.5</langgraph4j.version>
         <lombok.version>1.18.30</lombok.version>
-        <openapi.version>3.0.0</openapi.version>
+        <openapi.version>3.0.1</openapi.version>
         <jjwt.version>0.13.0</jjwt.version>
         <testcontainers.version>1.19.7</testcontainers.version>
         <commons-compress.version>1.27.1</commons-compress.version>
