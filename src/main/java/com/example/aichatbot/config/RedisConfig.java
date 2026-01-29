@@ -12,28 +12,23 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConfig {
 
-    @Bean
-    public RedisTemplate<String, IngestionJob> jobRedisTemplate(RedisConnectionFactory connectionFactory,
-            org.springframework.core.env.Environment env,
-            ObjectMapper objectMapper) {
-        // TODO remove this later
-//        String host = env.getProperty("spring.data.redis.host");
-//        String port = env.getProperty("spring.data.redis.port");
-//        System.out.println(">>> CONNECTING TO REDIS AT: " + host + ":" + port);
+        @Bean
+        @SuppressWarnings("deprecation")
+        public RedisTemplate<String, IngestionJob> jobRedisTemplate(RedisConnectionFactory connectionFactory,
+                        ObjectMapper objectMapper) {
+                RedisTemplate<String, IngestionJob> template = new RedisTemplate<>();
+                template.setConnectionFactory(connectionFactory);
 
-        RedisTemplate<String, IngestionJob> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
+                template.setKeySerializer(new StringRedisSerializer());
 
-        template.setKeySerializer(new StringRedisSerializer());
+                Jackson2JsonRedisSerializer<IngestionJob> serializer = new Jackson2JsonRedisSerializer<>(
+                                objectMapper, IngestionJob.class);
 
-        Jackson2JsonRedisSerializer<IngestionJob> serializer = new Jackson2JsonRedisSerializer<>(objectMapper,
-                IngestionJob.class);
+                template.setValueSerializer(serializer);
+                template.setHashKeySerializer(new StringRedisSerializer());
+                template.setHashValueSerializer(serializer);
 
-        template.setValueSerializer(serializer);
-        template.setHashKeySerializer(new StringRedisSerializer());
-        template.setHashValueSerializer(serializer);
-
-        template.afterPropertiesSet();
-        return template;
-    }
+                template.afterPropertiesSet();
+                return template;
+        }
 }
