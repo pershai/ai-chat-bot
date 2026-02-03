@@ -17,7 +17,7 @@
         <java.version>17</java.version>
         <spring-cloud.version>2025.1.0</spring-cloud.version>
         <langchain4j.version>1.9.1</langchain4j.version>
-        <langchain4j-gemini.version>1.9.1</langchain4j-gemini.version>
+        <langchain4j-gemini.version>1.10.0</langchain4j-gemini.version>
         <langchain4j-embeddings.version>1.9.1-beta17</langchain4j-embeddings.version>
         <langchain4j-qdrant.version>1.9.1-beta17</langchain4j-qdrant.version>
         <langchain4j-tika.version>1.9.1-beta17</langchain4j-tika.version>
